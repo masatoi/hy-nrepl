@@ -49,7 +49,7 @@
             (+= buf (.recv s 1))
             (except [e BlockingIOError]))
           (try
-            (setv (, resp rest) (decode buf))
+            (setv #(resp rest) (decode buf))
             (except [e Exception]
               (continue)))
           (setv buf rest)

@@ -1,5 +1,5 @@
-(import [HyREPL.ops [ops]])
-(require [HyREPL.ops [*]])
+(import HyREPL.ops [ops])
+(require HyREPL.ops [defop])
 
 (defop test [s m t]
        {"doc" "Test operation"

@@ -1,17 +1,25 @@
-(import types sys threading [queue [Queue]] [io [StringIO]])
+(import types
+        sys
+        threading
+        queue [Queue]
+        io [StringIO])
 (import ctypes)
 (import traceback)
+(import hy.reader [HyReader])
+(import hy.reader.exceptions [LexException])
 
-(import
-  [hy.lex [tokenize]]
-  [hy.lex.exceptions [LexException]])
+;; (setv hy-reader (HyReader))
+;; (setv gen (hy-reader.parse (StringIO "(+ 1 1)")))
+;; (setv expr (gen.__next__))
 
-(import
-  [HyREPL.workarounds [get-workaround]]
-  [HyREPL.ops [ops find-op]])
+;; (for [i expr]
+;;   (print i))
 
-(require [hy.contrib.walk [let]]
-         [HyREPL.ops [defop]])
+
+(import HyREPL.workarounds [get-workaround]) ; TODO
+
+(import HyREPL.ops [ops find-op])
+(require HyREPL.ops [defop])
 
 
 (defclass HyReplSTDIN [Queue]
@@ -33,17 +41,18 @@
   (let [res (ctypes.pythonapi.PyThreadState-SetAsyncExc (ctypes.c-long tid)
                                                         (ctypes.py-object exc))]
     (cond
-      [(= res 0) (raise (ValueError (.format "Thread ID does not exist: {}" tid)))]
-      [(> res 1)
-       (do
-         (ctypes.pythonapi.PyThreadState-SetAsyncExc tid 0)
-         (raise (SystemError "PyThreadState-SetAsyncExc failed")))])))
+      (= res 0) (raise (ValueError (.format "Thread ID does not exist: {}" tid)))
+      (> res 1)
+      (do
+        (ctypes.pythonapi.PyThreadState-SetAsyncExc tid 0)
+        (raise (SystemError "PyThreadState-SetAsyncExc failed"))))))
 
 
 (defclass InterruptibleEval [threading.Thread]
   ; """Repl simulation. This is a thread so hangs don't block everything."""
   (defn --init-- [self msg session writer]
     (.--init-- (super))
+    (setv self.reader (HyReader))
     (setv self.writer writer)
     (setv self.msg msg)
     (setv self.session session)
@@ -53,17 +62,20 @@
     None)
   (defn raise-exc [self exc]
     (assert (.isAlive self) "Trying to raise exception on dead thread!")
-    (for [(, tid tobj) (.items threading.-active)]
+    (for [#(tid tobj) (.items threading.-active)]
       (when (is tobj self)
         (async-raise tid exc)
         (break))))
   (defn terminate [self]
     (.raise-exc self SystemExit))
+  (defn tokenize [self code]
+    (setv gen (self.reader.parse (StringIO code)))
+    (gen.__next__))
   (defn run [self]
     (let [code (get self.msg "code")
           oldout sys.stdout]
       (try
-        (setv self.tokens (tokenize code))
+        (setv self.tokens (.tokenize self code))
         (except [e Exception]
           (.format-excp self (sys.exc-info))
           (self.writer {"status" ["done"] "id" (.get self.msg "id")}))
@@ -123,6 +135,9 @@
     (with [session.lock]
       (when (and (is-not session.repl None) (.is-alive session.repl))
         (.join session.repl))
+      (print "=== in eval ====================================")
+      (print (type session))
+      (print (dir session))
       (setv session.repl
             (InterruptibleEval msg session
                                (fn [x]
@@ -130,15 +145,19 @@
                                  (.write session x transport))))
       (.start session.repl))))
 
+(defn last [seq]
+  (let [length (len seq)]
+    (when (> length 0)
+      (get seq (- length 1)))))
 
 (defclass LightTableEval [InterruptibleEval]
   ; """Repl simulation. This is a thread so hangs don't block everything."""
   (defn run [self]
-    (let [code (last (.values (get (tokenize (get self.msg "data")) 0)))
+    (let [code (last (.values (get (.tokenize self (get self.msg "data")) 0)))
           output []
           oldout sys.stdout]
       (try
-        (setv self.tokens (tokenize code))
+        (setv self.tokens (.tokenize self code))
         (except [e Exception]
           (.format-excp self (sys.exc-info))
           ;; Since we cant get the keywords we get the values
@@ -225,45 +244,43 @@
            (.start session.repl))))
 
 (defop interrupt [session msg transport]
-       {"doc" "Interrupt a running eval"
-        "requires" {"session" "The session id used to start the eval to be interrupted"}
-        "optional" {"interrupt-id" "The ID of the eval to interrupt"}
-        "returns" {"status" (+ "\"interrupted\" if an eval was interrupted,"
-                               " \"session-idle\" if the session is not"
-                               " evaluating code at  the moment, "
-                               "\"interrupt-id-mismatch\" if the session is"
-                               " currently evaluating code with a different ID"
-                               " than the" "specified \"interrupt-id\" value")}}
-       (.write session {"id" (.get msg "id")
-                        "status"
-                        (with [session.lock]
-                          (cond
-                            [(or (is session.repl None) (not (.is-alive session.repl)))
-                             "session-idle"]
-                            [(!= session.eval-id (.get msg "interrupt-id"))
-                             "interrupt-id-mismatch"]
-                            [True
-                             (do
-                               (.terminate session.repl)
-                               (.join session.repl)
-                               "interrupted")]))}
-               transport)
-       (.write session
-               {"status" ["done"]
-                "id" (.get msg "id")}
-               transport))
+  {"doc" "Interrupt a running eval"
+   "requires" {"session" "The session id used to start the eval to be interrupted"}
+   "optional" {"interrupt-id" "The ID of the eval to interrupt"}
+   "returns" {"status" (+ "\"interrupted\" if an eval was interrupted,"
+                          " \"session-idle\" if the session is not"
+                          " evaluating code at  the moment, "
+                          "\"interrupt-id-mismatch\" if the session is"
+                          " currently evaluating code with a different ID"
+                          " than the" "specified \"interrupt-id\" value")}}
+  (.write session {"id" (.get msg "id")
+                   "status"
+                   (with [session.lock]
+                     (cond
+                       (or (is session.repl None) (not (.is-alive session.repl)))
+                       "session-idle"
+                       (!= session.eval-id (.get msg "interrupt-id"))
+                       "interrupt-id-mismatch"
+                       True
+                       (do
+                         (.terminate session.repl)
+                         (.join session.repl)
+                         "interrupted")))}
+          transport)
+  (.write session
+          {"status" ["done"]
+           "id" (.get msg "id")}
+          transport))
 
 
 (defop "load-file" [session msg transport]
-       {"doc" "Loads a body of code. Delegates to `eval`"
-        "requires" {"file" "full body of code"}
-        "optional" {"file-name" "name of the source file, for example for exceptions"
-                    "file-path" "path to the source file"}
-        "returns" (get (:desc (get ops "eval")) "returns")}
-       (let [code (-> (get msg "file")
-                     (.split " " 2)
-                     (get 2))]
-         (print (.strip code) :file sys.stderr)
-         (assoc msg "code" code)
-         (del (get msg "file"))
-         ((find-op "eval") session msg transport)))
+  {"doc" "Loads a body of code. Delegates to `eval`"
+   "requires" {"file" "full body of code"}
+   "optional" {"file-name" "name of the source file, for example for exceptions"
+               "file-path" "path to the source file"}
+   "returns" (get ops "eval" :desc "returns")}
+  (let [code (get (-> (get msg "file") (.split " " 2)) 2)]
+    (print (.strip code) :file sys.stderr)
+    (assoc msg "code" code)
+    (del (get msg "file"))
+    ((find-op "eval") session msg transport)))

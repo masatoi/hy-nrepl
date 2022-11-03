@@ -2,14 +2,14 @@
   sys
   threading
   time
-  [socketserver [ThreadingMixIn TCPServer BaseRequestHandler]])
+  socketserver [ThreadingMixIn TCPServer BaseRequestHandler])
 
-(import [HyREPL [bencode session]])
+(import HyREPL [bencode session])
 
 ; TODO: move these includes somewhere else
-(import [HyREPL.middleware [test eval complete info]])
+(import HyREPL.middleware [test eval complete info])
 
-(require [hy.contrib.walk [let]])
+(require hyrule [defmain])
 
 (defclass ReplServer [ThreadingMixIn TCPServer]
   (setv allow-reuse-address True))
@@ -20,7 +20,7 @@
     (print "New client" :file sys.stderr)
     (let [buf (bytearray)
           tmp None
-          msg (,)]
+          msg #()]
       (while True
         (try
           (setv tmp (.recv self.request 1024))
@@ -38,23 +38,26 @@
             (print e :file sys.stderr)
             (continue)))
         (when (is self.session None)
-          (setv self.session (.get session.sessions (.get (get m 0)
-                                                          "session")))
+          (setv self.session (.get session.sessions (.get (get m 0) "session")))
           (when (is self.session None)
             (setv self.session (session.Session))))
         (.handle self.session (get m 0) self.request))
       (print "Client gone" :file sys.stderr))))
 
 
-(defn start-server [&optional [ip "127.0.0.1"] [port 1337]]
-  (let [s (ReplServer (, ip port) ReplRequestHandler)
+(defn start-server [[ip "127.0.0.1"] [port 1337]]
+  (let [s (ReplServer #(ip port) ReplRequestHandler)
         t (threading.Thread :target s.serve-forever)]
     (setv t.daemon True)
     (.start t)
-    (, t s)))
+    #(t s)))
 
+(defn last [seq]
+  (let [length (len seq)]
+    (when (> length 0)
+      (get seq (- length 1)))))
 
-(defmain [&rest args]
+(defmain [#*args]
   (setv port
         (if (> (len args) 0)
             (try

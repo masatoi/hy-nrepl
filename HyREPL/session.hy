@@ -1,11 +1,11 @@
-(import sys [uuid [uuid4]] [threading [Lock]])
-(import
-  [HyREPL [bencode]]
-  [HyREPL.ops [find-op]])
+(import sys
+        uuid [uuid4]
+        threading [Lock])
 
+(import HyREPL [bencode])
+(import HyREPL.ops [find-op])
 
 (setv sessions {})
-
 
 (defclass Session [object]
   (setv status "")
@@ -28,7 +28,12 @@
       (assoc msg "session" self.uuid))
     (print "out:" msg :file sys.stderr)
     (try
-      (.sendall transport (bencode.encode msg))
+      (do
+        (print "=== in session.write ==========================")
+        (print (type transport))
+        (print (dir transport))
+        (print (bencode.encode msg) :flush True)
+        (.sendall transport (bencode.encode msg)))
       (except [e OSError]
         (print (.format "Client gone: {}" e) :file sys.stderr))))
   (defn handle [self msg transport]

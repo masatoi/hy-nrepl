@@ -4,16 +4,15 @@
 (import sys re)
 
 (import
-  hy.macros hy.compiler hy.core.language
-  [hy.completer [Completer]]
-  [hy.models [HySymbol]])
+  hy.macros
+  hy.compiler
+  hy.completer [Completer]
+  hy.models [Symbol])
 
-(import [HyREPL.ops [ops]])
-(require [HyREPL.ops [defop]]
-         [hy.contrib.walk [let]])
+(import HyREPL.ops [ops])
+(require HyREPL.ops [defop])
 
-(import [HyREPL.middleware.eval [eval-module]])
-
+(import HyREPL.middleware.eval [eval-module])
 
 (defn make-type [item &optional override-type]
   (let [t (type item)]
@@ -39,7 +38,7 @@
         (print "expr => " expr)
         (print "attr => " attr)
 
-        (let [obj (eval (HySymbol expr) (. self namespace))
+        (let [obj (eval (Symbol expr) (. self namespace))
               words (dir obj)
               n (len attr)
               matches []]
@@ -60,7 +59,7 @@
         [])))
   (defn global-matches [self text]
     (let [matches []]
-      (for [p (. self path) (, k v) (.items p)]
+      (for [p (. self path) #(k v) (.items p)]
         (when (instance? str k)
           (setv k (.replace k "_" "-"))
           (when (.startswith k text)

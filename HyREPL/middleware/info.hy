@@ -1,12 +1,9 @@
 (import sys inspect)
 
-(import
-  [HyREPL.ops [ops]]
-  [HyREPL.middleware.eval [eval-module]])
+(import HyREPL.ops [ops]
+        HyREPL.middleware.eval [eval-module])
 
-(require [HyREPL.ops [defop]]
-         [hy.contrib.walk [let]])
-
+(require HyREPL.ops [defop])
 
 (defn resolve-symbol [sym]
   (try

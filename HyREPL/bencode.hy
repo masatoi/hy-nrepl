@@ -1,7 +1,6 @@
-(require [hy.contrib.walk [let]])
-
-(deftag b [expr] `(bytes ~expr "utf-8"))
-
+(defreader b
+  (setv expr (.parse-one-form &reader))
+  `(bytes ~expr "utf-8"))
 
 (defn decode-multiple [thing]
   "Uses `decode` to decode all encoded values in `thing`."
@@ -11,7 +10,6 @@
       (.append r (first i))
       (setv t (second i)))
     r))
-
 
 (defn decode [thing]
   "Decodes `thing` and returns the first parsed bencode value encountered as"
@@ -23,13 +21,13 @@
     [True ; assume string
       (let [delim (.find thing #b":")
             size (int (.decode (cut thing 0 delim) "utf-8"))]
-        (, (.decode (cut thing (inc delim) (+ size (inc delim))) "utf-8")
+        #((.decode (cut thing (inc delim) (+ size (inc delim))) "utf-8")
            (cut thing (+ size (inc delim)))))]))
 
 
 (defn decode-int [thing]
   (let [end (.find thing #b"e")]
-    (, (int (cut thing 0 end) 10)
+    #((int (cut thing 0 end) 10)
        (cut thing (inc end)))))
 
 
@@ -43,7 +41,7 @@
         (break)))
     (when (= (len t) 0)
       (raise (ValueError "List without end marker")))
-    (, rv (cut t 1))))
+    #(rv (cut t 1))))
 
 
 (defn decode-dict [thing]
@@ -57,7 +55,7 @@
         (break)))
     (when (= (len t) 0)
       (raise (ValueError "Dictionary without end marker")))
-    (, rv (cut t 1))))
+    #(rv (cut t 1))))
 
 
 (defn encode [thing]

@@ -2,11 +2,11 @@
 ; It prevents us from having to fork all sorts of clients though, so we got that going for, which is nice.
 
 (import traceback)
-(require [hy.contrib.walk [let]])
+(require hyrule [assoc])
 
 (setv workarounds {})
 
-(defmacro def-workaround [match args &rest body]
+(defmacro def-workaround [match args #*body]
   `(assoc workarounds ~match (fn ~args ~@body)))
 
 (defn is-callable [f]
