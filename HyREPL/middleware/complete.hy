@@ -9,19 +9,21 @@
   hy.completer [Completer]
   hy.models [Symbol])
 
+(import toolz [first second])
+
 (import HyREPL.ops [ops])
 (require HyREPL.ops [defop])
 
 (import HyREPL.middleware.eval [eval-module])
 
-(defn make-type [item &optional override-type]
+(defn make-type [item [override-type None]]
   (let [t (type item)]
     (cond
-      [(and (is-not override-type None) (= t (. make-type --class--)))
+      [(and (is-not override-type None) (= t (. make-type __class__)))
        override-type]
-      [(= t (. dir --class--)) "function"]
+      [(= t (. dir __class__)) "function"]
       [(= t dict) "namespace"]
-      [True (. t --name--)])))
+      [True (. t __name__)])))
 
 (defclass TypedCompleter [hy.completer.Completer]
   (defn attr-matches [self text]
@@ -60,7 +62,7 @@
   (defn global-matches [self text]
     (let [matches []]
       (for [p (. self path) #(k v) (.items p)]
-        (when (instance? str k)
+        (when (isinstance k str)
           (setv k (.replace k "_" "-"))
           (when (.startswith k text)
             (.append matches {"candidate" k
@@ -68,8 +70,8 @@
       matches)))
 
 
-(defn get-completions [stem &optional extra]
-  (let [comp (TypedCompleter (. eval-module --dict--))]
+(defn get-completions [stem [extra None]]
+  (let [comp (TypedCompleter (. eval-module __dict__))]
     (cond
       [(in "." stem) (.attr-matches comp stem)]
       [True (.global-matches comp stem)])))

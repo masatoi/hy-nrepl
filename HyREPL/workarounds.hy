@@ -18,8 +18,13 @@
       (when (or (and (callable? w) (w code)) (= w code))
         (setv rv (get workarounds w))
       (break)))
-    (if (none? rv)
-      (fn [s m] (get m "code"))
+
+    (print (.format "DEBUG[get-workaround]: rv: {}" rv) :flush True)
+    
+    (if (is rv None)
+      (fn [s m]
+        (print (.format "DEBUG[get-workaround]: s: {}, m: {}" s m) :flush True)
+        (get m "code"))
       rv)))
 
 ; Workarounds for Fireplace

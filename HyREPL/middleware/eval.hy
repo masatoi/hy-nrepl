@@ -7,25 +7,17 @@
 (import traceback)
 (import hy.reader [HyReader])
 (import hy.reader.exceptions [LexException])
-
-;; (setv hy-reader (HyReader))
-;; (setv gen (hy-reader.parse (StringIO "(+ 1 1)")))
-;; (setv expr (gen.__next__))
-
-;; (for [i expr]
-;;   (print i))
-
+(import toolz [first second last])
+(require hyrule [assoc])
 
 (import HyREPL.workarounds [get-workaround]) ; TODO
-
 (import HyREPL.ops [ops find-op])
 (require HyREPL.ops [defop])
 
-
 (defclass HyReplSTDIN [Queue]
   ; """This is hack to override sys.stdin."""
-  (defn --init-- [self write]
-    (.--init-- (super))
+  (defn __init__ [self write]
+    (.__init__ (super))
     (setv self.writer write)
     None)
   (defn readline [self]
@@ -47,17 +39,16 @@
         (ctypes.pythonapi.PyThreadState-SetAsyncExc tid 0)
         (raise (SystemError "PyThreadState-SetAsyncExc failed"))))))
 
-
 (defclass InterruptibleEval [threading.Thread]
-  ; """Repl simulation. This is a thread so hangs don't block everything."""
-  (defn --init-- [self msg session writer]
-    (.--init-- (super))
+  ;; """Repl simulation. This is a thread so hangs don't block everything."""
+  (defn __init__ [self msg session writer]
+    (.__init__ (super))
     (setv self.reader (HyReader))
     (setv self.writer writer)
     (setv self.msg msg)
     (setv self.session session)
     (setv sys.stdin (HyReplSTDIN writer))
-    ; we're locked under self.session.lock, so modification is safe
+    ;; we're locked under self.session.lock, so modification is safe
     (setv self.session.eval-id (.get msg "id"))
     None)
   (defn raise-exc [self exc]
@@ -72,31 +63,34 @@
     (setv gen (self.reader.parse (StringIO code)))
     (gen.__next__))
   (defn run [self]
+
+    (print (.format "DEBUG[InterruptibleEval.run] msg: {}" self.msg) :flush True)
+
     (let [code (get self.msg "code")
           oldout sys.stdout]
       (try
-        (setv self.tokens (.tokenize self code))
+        (setv self.expr (.tokenize self code))
         (except [e Exception]
           (.format-excp self (sys.exc-info))
           (self.writer {"status" ["done"] "id" (.get self.msg "id")}))
         (else
-          ; TODO: add 'eval_msg' updates too the current session
-          (for [i self.tokens]
-            (let [p (StringIO)]
-              (try
-                (do
-                  (setv sys.stdout (StringIO))
-                  (.write p (str (eval i (if (instance? dict eval-module)
-                                             eval-module
-                                             (. eval-module --dict--))
-                                          "__main__"))))
-                (except [e Exception]
-                  (setv sys.stdout oldout)
-                  (.format-excp self (sys.exc-info)))
-                (else
-                  (when (and (= (.getvalue p) "None") (bool (.getvalue sys.stdout)))
-                    (self.writer {"out" (.getvalue sys.stdout)}))
-                  (self.writer {"value" (.getvalue p) "ns" (.get self.msg "ns" "Hy")})))))
+          ;; TODO: add 'eval_msg' updates too the current session
+          (let [p (StringIO)]
+            (try
+              (do
+                (setv sys.stdout (StringIO))
+
+                (print (.format "DEBUG[InterruptibleEval.run] i: {}" self.expr))
+                (print (.format "DEBUG[InterruptibleEval.run] eval-module: {}" eval-module))
+                
+                (.write p (str (hy.eval self.expr :module eval-module))))
+              (except [e Exception]
+                (setv sys.stdout oldout)
+                (.format-excp self (sys.exc-info)))
+              (else
+                (when (and (= (.getvalue p) "None") (bool (.getvalue sys.stdout)))
+                  (self.writer {"out" (.getvalue sys.stdout)}))
+                (self.writer {"value" (.getvalue p) "ns" (.get self.msg "ns" "Hy")}))))
           (setv sys.stdout oldout)
           (self.writer {"status" ["done"]})))))
   (defn format-excp [self trace]
@@ -106,15 +100,14 @@
       (setv self.session.last-traceback exc-traceback)
       (traceback.print_tb exc-traceback)
       (self.writer {"status" ["eval-error"]
-                    "ex" (. exc-type --name--)
-                    "root-ex" (. exc-type --name--)
+                    "ex" (. exc-type __name__)
+                    "root-ex" (. exc-type __name__)
                     "id" (.get self.msg "id")})
-      (when (instance? LexException exc-value)
+      (when (isinstance exc-value LexException)
         (when (is exc-value.source None)
           (setv exc-value.source ""))
         (setv exc-value (.format "LexException: {}" exc-value.message)))
       (self.writer {"err" (.strip (str exc-value))}))))
-
 
 (defop eval [session msg transport]
        {"doc" "Evaluates code."
@@ -130,25 +123,24 @@
                    "value" (+ "The values returned by `code` if execution was"
                               " successful. Absent if `ex` and `root-ex` are"
                               " present")}}
+  (print "DEBUG[eval]: in body of eval" :flush True)
   (let [w (get-workaround (get msg "code"))]
+    (print (.format "DEBUG[eval]: w: {}" w))
     (assoc msg "code" (w session msg))
+    (print (.format "DEBUG[eval]: msg: {}" msg))
     (with [session.lock]
       (when (and (is-not session.repl None) (.is-alive session.repl))
         (.join session.repl))
       (print "=== in eval ====================================")
-      (print (type session))
-      (print (dir session))
+      (print (.format "DEBUG[eval]: (type session): {}" (type session)))
+      (print (.format "DEBUG[eval]: (dir session): {}" (dir session)))
       (setv session.repl
             (InterruptibleEval msg session
-                               (fn [x]
-                                 (assoc x "id" (.get msg "id"))
-                                 (.write session x transport))))
+                               (fn [message]
+                                 (assoc message "id" (.get msg "id"))
+                                 (.write session message transport))))
+      (print (.format "DEBUG[eval]: session.repl: {}" session.repl))
       (.start session.repl))))
-
-(defn last [seq]
-  (let [length (len seq)]
-    (when (> length 0)
-      (get seq (- length 1)))))
 
 (defclass LightTableEval [InterruptibleEval]
   ; """Repl simulation. This is a thread so hangs don't block everything."""
@@ -169,7 +161,7 @@
               (try
                 (do
                   (setv sys.stdout (StringIO))
-                  (.write p (str (eval i eval-module.--dict-- "__main__"))))
+                  (.write p (str (eval i eval-module.__dict__ "__main__"))))
                 (except [e Exception]
                   (setv sys.stdout oldout)
                   (def err (first (sys.exc-info)))

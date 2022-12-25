@@ -7,10 +7,10 @@
 
 (defn resolve-symbol [sym]
   (try
-    (eval (HySymbol sym) (. eval-module --dict--))
+    (eval (HySymbol sym) (. eval-module __dict__))
     (except [e NameError]
       (try
-        (get --macros-- (mangle sym))
+        (get __macros__ (mangle sym))
         (except [e KeyError]
           None)))))
 
@@ -21,10 +21,10 @@
         sig (and (callable s) (inspect.signature s))
         rv {}]
     (print "Got object " s " for symbol " symbol)
-    (when (not (none? s))
+    (when (is-not s None)
       (.update rv {"doc" (or d c "No doc string")
                    "static" "true"
-                   "ns" (or (. (inspect.getmodule s) --name--) "Hy")
+                   "ns" (or (. (inspect.getmodule s) __name__) "Hy")
                    "name" symbol})
       (try
         (.update rv

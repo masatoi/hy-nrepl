@@ -6,36 +6,48 @@
 (import sys)
 (import hy.models)
 (require hyrule [unless defmacro/g! assoc])
+(import toolz [first second nth])
 
 (setv ops {})
 
 (defmacro/g! defop [name args desc #*body]
-  (unless (or (= (type name) hy.models.String)
-              (= (type name) hy.models.Symbol))
+  (unless (or (isinstance name hy.models.String)
+              (isinstance name hy.models.Symbol))
     (raise (TypeError "Name must be a symbol or a string.")))
-  (unless (= (type args) hy.models.List)
+  (unless (isinstance args hy.models.List)
     (raise (TypeError "Arguments must be a list.")))
-  (unless (= (type desc) hy.models.Dict)
+  (unless (isinstance desc hy.models.Dict)
     (raise (TypeError "Description must be a dictionary.")))
   (setv fn-checked
         `(fn [~@args]
+           (print (.format "DEBUG[defop fn-checked]: before check, {}, {}"
+                           (.get ~desc "requires" {})
+                           (.keys (.get ~desc "requires" {})))
+                  :flush True)
            (setv g!failed False)
            (for [g!r (.keys (.get ~desc "requires" {}))]
-             (unless (in g!r (second ~args))
-               (.write (first ~args)
-                       {"status" ["done"]
-                        "id" (.get (second ~args) "id")
-                        "missing" (str g!r)} (nth ~args 2))
-               (setv g!failed True)
-               (break)))
-           (unless g!failed (do ~@body))))
+             (print (.format "DEBUG[defop fn-checked]: g!r: {}" g!r) :flush True)
+             (if (in g!r (second ~args))
+                 None
+                 (do
+                   (.write (first ~args)
+                           {"status" ["done"]
+                            "id" (.get (second ~args) "id")
+                            "missing" (str g!r)} (nth 2 ~args))
+                   (setv g!failed True)
+                   (break))))
+           (print (.format "DEBUG[defop fn-checked]: after check, g!failed: {}" g!failed) :flush True)
+           (if g!failed
+               None
+               (do ~@body))))
   (setv n (str name))
   (setv o {:f fn-checked :desc desc})
   `(assoc ops ~n ~o))
 
 (defn find-op [op]
+  (print op)
   (if (in op ops)
-    (:f (get ops op))
+    (get ops op :f)
     (fn [s m t]
       (print (.format "Unknown op {} called" op) :file sys.stderr)
       (.write s {"status" ["done"] "id" (.get m "id")} t))))
@@ -45,6 +57,7 @@
    "requires" {}
    "optional" {"session" "The session to be cloned. If this is left out, the current session is cloned"}
    "returns" {"new-session" "The ID of the new session"}}
+  (print "[clone] before load Session")
   (import HyREPL.session [Session]) ; Imported here to avoid circ. dependency
   (let [s (Session)]
     (.write session {"status" ["done"] "id" (.get msg "id") "new-session" (str s)} transport)))
@@ -67,7 +80,7 @@
   (.close transport))
 
 
-(defn make-version [&optional [major 0] [minor 0] [incremental 0]]
+(defn make-version [[major 0] [minor 0] [incremental 0]]
   {"major" major
    "minor" minor
    "incremental" incremental
@@ -75,23 +88,24 @@
 
 
 (defop describe [session msg transport]
-       {"doc" "Describe available commands"
-       "requires" {}
-       "optional" {"verbose?" "True if more verbose information is requested"}
-       "returns" {"aux" "Map of auxiliary data"
-                 "ops" "Map of operations supported by this nREPL server"
-                 "versions" "Map containing version maps, for example of the nREPL protocol supported by this server"}}
-       ; TODO: don't ignore verbose argument
-       ; TODO: more versions: Python, Hy
-       (.write session
-               {"status" ["done"]
-               "id" (.get msg "id")
-               "versions" {"nrepl" (make-version 0 2 7)
-                           "java" (make-version)
-                           "clojure" (make-version)}
-                "ops" (dfor [k v] (.items ops) [k (:desc v)])
-                "session" (.get msg "session")}
-               transport))
+  {"doc" "Describe available commands"
+   "requires" {}
+   "optional" {"verbose?" "True if more verbose information is requested"}
+   "returns" {"aux" "Map of auxiliary data"
+              "ops" "Map of operations supported by this nREPL server"
+              "versions" "Map containing version maps, for example of the nREPL protocol supported by this server"}}
+                                ; TODO: don't ignore verbose argument
+                                ; TODO: more versions: Python, Hy
+  (print "DEBUG: in body of describe" :flush True)
+  (.write session
+          {"status" ["done"]
+           "id" (.get msg "id")
+           "versions" {"nrepl" (make-version 0 2 7)
+                       "java" (make-version)
+                       "clojure" (make-version)}
+           "ops" (dfor [k v] (.items ops) k (get v :desc))
+           "session" (.get msg "session")}
+          transport))
 
 
 (defop stdin [session msg transport]
