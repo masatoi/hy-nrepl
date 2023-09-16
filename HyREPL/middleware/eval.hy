@@ -13,6 +13,20 @@
 (import HyREPL.workarounds [get-workaround]) ; TODO
 (import HyREPL.ops [ops find-op])
 (require HyREPL.ops [defop])
+(import logging)
+
+(logging.basicConfig
+  :level logging.DEBUG
+  :format "%(levelname)s:%(name)s: %(message)s (at %(filename)s:%(lineno)d in %(funcName)s)")
+
+(setv logger (logging.getLogger "eval"))
+(setv handler (logging.StreamHandler))
+(handler.setLevel logging.DEBUG)
+(handler.setFormatter "%(levelname)s:%(name)s: %(message)s (at %(filename)s:%(lineno)d in %(funcName)s)")
+(logger.addHandler handler)
+(logger.setLevel logging.DEBUG)
+
+(logging.debug "文字列変数: %s" "hello")
 
 (defclass HyReplSTDIN [Queue]
   ; """This is hack to override sys.stdin."""
@@ -27,7 +41,6 @@
 
 
 (setv eval-module (types.ModuleType "__main__")) ; Module context for evaluations
-
 
 (defn async-raise [tid exc]
   (let [res (ctypes.pythonapi.PyThreadState-SetAsyncExc (ctypes.c-long tid)
@@ -63,9 +76,6 @@
     (setv gen (self.reader.parse (StringIO code)))
     (gen.__next__))
   (defn run [self]
-
-    (print (.format "DEBUG[InterruptibleEval.run] msg: {}" self.msg) :flush True)
-
     (let [code (get self.msg "code")
           oldout sys.stdout]
       (try
@@ -79,10 +89,11 @@
             (try
               (do
                 (setv sys.stdout (StringIO))
-
-                (print (.format "DEBUG[InterruptibleEval.run] i: {}" self.expr))
-                (print (.format "DEBUG[InterruptibleEval.run] eval-module: {}" eval-module))
                 
+                (print (.format "DEBUG[InterruptibleEval.run] msg: {}, expr: {}, eval-module: {}"
+                                self.msg self.expr eval-module)
+                       :flush True) ; debug
+
                 (.write p (str (hy.eval self.expr :module eval-module))))
               (except [e Exception]
                 (setv sys.stdout oldout)
@@ -110,20 +121,20 @@
       (self.writer {"err" (.strip (str exc-value))}))))
 
 (defop eval [session msg transport]
-       {"doc" "Evaluates code."
-        "requires" {"code" "The code to be evaluated"}
-        "optional" {"session" (+ "The ID of the session in which the code will"
-                                 " be evaluated. If absent, a new session will"
-                                 " be generated")
-                    "id" "An opaque message ID that will be included in the response"}
-        "returns" {"ex" "Type of the exception thrown, if any. If present, `value` will be absent."
-                   "ns" (+ "The current namespace after the evaluation of `code`."
-                           " For HyREPL, this will always be `Hy`.")
-                   "root-ex" "Same as `ex`"
-                   "value" (+ "The values returned by `code` if execution was"
-                              " successful. Absent if `ex` and `root-ex` are"
-                              " present")}}
-  (print "DEBUG[eval]: in body of eval" :flush True)
+  {"doc" "Evaluates code."
+   "requires" {"code" "The code to be evaluated"}
+   "optional" {"session" (+ "The ID of the session in which the code will"
+                            " be evaluated. If absent, a new session will"
+                            " be generated")
+               "id" "An opaque message ID that will be included in the response"}
+   "returns" {"ex" "Type of the exception thrown, if any. If present, `value` will be absent."
+              "ns" (+ "The current namespace after the evaluation of `code`."
+                      " For HyREPL, this will always be `Hy`.")
+              "root-ex" "Same as `ex`"
+              "value" (+ "The values returned by `code` if execution was"
+                         " successful. Absent if `ex` and `root-ex` are"
+                         " present")}}
+  (print "DEBUG[eval]: in body of eval ======================")
   (let [w (get-workaround (get msg "code"))]
     (print (.format "DEBUG[eval]: w: {}" w))
     (assoc msg "code" (w session msg))
@@ -131,14 +142,14 @@
     (with [session.lock]
       (when (and (is-not session.repl None) (.is-alive session.repl))
         (.join session.repl))
-      (print "=== in eval ====================================")
       (print (.format "DEBUG[eval]: (type session): {}" (type session)))
       (print (.format "DEBUG[eval]: (dir session): {}" (dir session)))
       (setv session.repl
             (InterruptibleEval msg session
-                               (fn [message]
-                                 (assoc message "id" (.get msg "id"))
-                                 (.write session message transport))))
+              (fn [message]
+                (print (.format "DEBUG[InterruptibleEval]: message: {}" message))
+                (assoc message "id" (.get msg "id"))
+                (.write session message transport))))
       (print (.format "DEBUG[eval]: session.repl: {}" session.repl))
       (.start session.repl))))
 

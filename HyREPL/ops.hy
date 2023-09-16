@@ -10,7 +10,7 @@
 
 (setv ops {})
 
-(defmacro/g! defop [name args desc #*body]
+(defmacro/g! defop [name args desc #* body]
   (unless (or (isinstance name hy.models.String)
               (isinstance name hy.models.Symbol))
     (raise (TypeError "Name must be a symbol or a string.")))
@@ -20,13 +20,13 @@
     (raise (TypeError "Description must be a dictionary.")))
   (setv fn-checked
         `(fn [~@args]
-           (print (.format "DEBUG[defop fn-checked]: before check, {}, {}"
-                           (.get ~desc "requires" {})
-                           (.keys (.get ~desc "requires" {})))
-                  :flush True)
+           ;; (print (.format "DEBUG[defop fn-checked]: before check, {}, {}"
+           ;;                 (.get ~desc "requires" {})
+           ;;                 (.keys (.get ~desc "requires" {})))
+           ;;        :flush True)
            (setv g!failed False)
            (for [g!r (.keys (.get ~desc "requires" {}))]
-             (print (.format "DEBUG[defop fn-checked]: g!r: {}" g!r) :flush True)
+             ;; (print (.format "DEBUG[defop fn-checked]: g!r: {}" g!r) :flush True)
              (if (in g!r (second ~args))
                  None
                  (do
@@ -36,7 +36,7 @@
                             "missing" (str g!r)} (nth 2 ~args))
                    (setv g!failed True)
                    (break))))
-           (print (.format "DEBUG[defop fn-checked]: after check, g!failed: {}" g!failed) :flush True)
+           ;; (print (.format "DEBUG[defop fn-checked]: after check, g!failed: {}" g!failed) :flush True)
            (if g!failed
                None
                (do ~@body))))

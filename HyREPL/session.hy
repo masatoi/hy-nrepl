@@ -38,8 +38,9 @@
         (print (encode msg) :flush True)
         (.sendall transport (encode msg)))
       (except [e OSError]
-        (print (.format "Client gone: {}" e) :flush True) ; debug
-        (print (.format "Client gone: {}" e) :file sys.stderr))))
+        (print (.format "DEBUG[Session.write] Client gone: {}" e) :flush True) ; debug
+        (print (.format "Client gone: {}" e) :file sys.stderr)
+        (setv self.status "client_gone"))))
   (defn handle [self msg transport]
     (print (.format "DEBUG[Session.handle]: msg: {}, transport: {}" msg transport) :flush True) ; debug
     (print "in:" msg :file sys.stderr)

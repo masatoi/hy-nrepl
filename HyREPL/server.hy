@@ -8,13 +8,13 @@
 (import HyREPL.bencode [decode])
 (import toolz [last])
 
-; TODO: move these includes somewhere else
+;; TODO: move these includes somewhere else
 (import HyREPL.middleware [test eval complete info])
 
 (import hyrule [inc])
 (require hyrule [defmain])
 
-(defclass ReplServer [ThreadingMixIn TCPServer]
+(defclass ReplServer [TCPServer] ; ThreadingMixIn 
   (setv allow-reuse-address True))
 
 (defclass ReplRequestHandler [BaseRequestHandler]
@@ -45,12 +45,15 @@
             (print e :file sys.stderr)
             (continue)))
         (print (.format "DEBUG self.session: {}" self.session)) ; debug
+
+        ;; Create session if not exist
         (when (is self.session None)
           (print (.format "DEBUG sessions: {}" sessions)) ; debug
           (setv self.session (.get sessions (.get (get m 0) "session")))
           (when (is self.session None)
             (print "DEBUG ReplRequestHandler.handle: session is None, create new Session") ; debug
             (setv self.session (Session))))
+
         (print (.format "DEBUG: self.session: {}, (get m 0): {}, self.request: {}"
                         self.session (get m 0) self.request)
                :flush True) ; debug
@@ -58,6 +61,7 @@
         (print (.format "DEBUG call session.handle: self.session.handle: {}, (get m 0): {}, self.request: {}"
                         self.session.handle (get m 0) self.request)
                :flush True) ; debug
+
         (self.session.handle (get m 0) self.request))
       (print "Client gone" :file sys.stderr))))
 
