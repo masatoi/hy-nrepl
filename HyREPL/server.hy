@@ -72,7 +72,7 @@
     (.start t)
     #(t s)))
 
-(defmain [#*args]
+(defmain [#* args]
   (setv port
         (if (> (len args) 0)
             (try

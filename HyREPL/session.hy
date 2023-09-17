@@ -19,12 +19,16 @@
     (print "Session.__init__") ; debug
     (setv self.uuid (str (uuid4)))
     (assoc sessions self.uuid self)
+    ;; [NOTE] What is this used for?
     (setv self.lock (Lock))
     None)
+
   (defn __str__ [self]
     self.uuid)
+
   (defn __repr__ [self]
     self.uuid)
+
   (defn write [self msg transport]
     (assert (in "id" msg))
     (unless (in "session" msg)

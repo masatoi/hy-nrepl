@@ -14,7 +14,7 @@
   (setv expr (.parse-one-form &reader))
   `(bytes ~expr "utf-8"))
 
-(defmacro assert-multi [#*cases]
+(defmacro assert-multi [#* cases]
   (let [s (lfor c cases `(assert ~c))]
     `(do ~s)))
 

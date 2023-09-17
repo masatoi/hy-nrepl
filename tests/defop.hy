@@ -7,7 +7,7 @@
 (require hyrule [unless])
 (import toolz [first second nth])
 
-(defmacro assert-multi [#*cases]
+(defmacro assert-multi [#* cases]
   (let [s (lfor c cases `(assert ~c))]
     `(do ~s)))
 
@@ -73,7 +73,7 @@
     (in "o4-something.foo" ops)
     (= (get ops "o3" :desc) {"doc" "I'm a docstring!"})))
 
-(defmacro macroexpand-multi-assert-fail [#*macros]
+(defmacro macroexpand-multi-assert-fail [#* macros]
   (let [s (lfor m macros
                 `(try
                    (hy.macroexpand ~m)
