@@ -6,7 +6,7 @@
 
 (setv workarounds {})
 
-(defmacro def-workaround [match args #*body]
+(defmacro def-workaround [match args #* body]
   `(assoc workarounds ~match (fn ~args ~@body)))
 
 (defn is-callable [f]

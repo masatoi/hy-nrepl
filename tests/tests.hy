@@ -2,7 +2,7 @@
 (import io [StringIO]
         socketserver [ThreadingMixIn UnixStreamServer TCPServer])
 
-(os.chdir "/home/wiz/program/hy/HyREPL/") ; for development
+(os.chdir "/Users/wiz/hy/HyREPL/") ; for development
 
 (import HyREPL.bencode [encode decode decode-multiple])
 (import HyREPL.server [start-server ReplServer ReplRequestHandler])
