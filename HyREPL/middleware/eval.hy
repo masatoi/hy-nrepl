@@ -27,17 +27,20 @@
 (setv eval-module None)
 
 (defclass HyReplSTDIN [Queue]
-  ; """This is hack to override sys.stdin."""
+  ;; """This is hack to override sys.stdin."""
   (defn __init__ [self write]
     (.__init__ (super))
     (setv self.writer write)
     None)
+
   (defn readline [self]
     (self.writer {"status" ["need-input"]})
     (.join self)
     (.get self)))
 
 (defn async-raise [tid exc]
+  ;; https://zenn.dev/bluesilvercat/articles/c492339d1cd20c
+  (logging.debug "InterruptibleEval.async-raise: tid=%s, exc=%s" tid exc)
   (let [res (ctypes.pythonapi.PyThreadState-SetAsyncExc (ctypes.c-long tid)
                                                         (ctypes.py-object exc))]
     (cond
@@ -60,17 +63,22 @@
     ;; we're locked under self.session.lock, so modification is safe
     (setv self.session.eval-id (.get msg "id"))
     None)
+
   (defn raise-exc [self exc]
-    (assert (.isAlive self) "Trying to raise exception on dead thread!")
-    (for [#(tid tobj) (.items threading.-active)]
+    (logging.debug "InterruptibleEval.raise-exc: exc=%s, threads=%s" exc (threading.enumerate))
+    (assert (.is-alive self) "Trying to raise exception on dead thread!")
+    (for [tobj (threading.enumerate)]
       (when (is tobj self)
-        (async-raise tid exc)
+        (async-raise (. tobj ident) exc)
         (break))))
+
   (defn terminate [self]
     (.raise-exc self SystemExit))
+
   (defn tokenize [self code]
     (setv gen (self.reader.parse (StringIO code)))
     (gen.__next__))
+
   (defn run [self]
     (let [code (get self.msg "code")
           oldout sys.stdout]
@@ -97,6 +105,7 @@
                 (self.writer {"value" (.getvalue p) "ns" (.get self.msg "ns" "Hy")}))))
           (setv sys.stdout oldout)
           (self.writer {"status" ["done"]})))))
+
   (defn format-excp [self trace]
     (let [exc-type (first trace)
           exc-value (second trace)
@@ -190,13 +199,13 @@
                        (do
                          (.terminate session.repl)
                          (.join session.repl)
+                         (logging.debug "interrupt: interrupted")
                          "interrupted")))}
           transport)
   (.write session
           {"status" ["done"]
            "id" (.get msg "id")}
           transport))
-
 
 (defop "load-file" [session msg transport]
   {"doc" "Loads a body of code. Delegates to `eval`"
