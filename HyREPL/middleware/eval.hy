@@ -9,8 +9,6 @@
 (import hy.reader.exceptions [LexException])
 (import toolz [first second last])
 (require hyrule [assoc])
-
-(import HyREPL.workarounds [get-workaround]) ; TODO
 (import HyREPL.ops [ops find-op])
 (require HyREPL.ops [defop])
 (import logging)
@@ -26,8 +24,6 @@
 (logger.addHandler handler)
 (logger.setLevel logging.DEBUG)
 
-(logging.debug "文字列変数: %s" "hello")
-
 (defclass HyReplSTDIN [Queue]
   ; """This is hack to override sys.stdin."""
   (defn __init__ [self write]
@@ -38,9 +34,6 @@
     (self.writer {"status" ["need-input"]})
     (.join self)
     (.get self)))
-
-
-(setv eval-module (types.ModuleType "__main__")) ; Module context for evaluations
 
 (defn async-raise [tid exc]
   (let [res (ctypes.pythonapi.PyThreadState-SetAsyncExc (ctypes.c-long tid)
@@ -89,12 +82,14 @@
             (try
               (do
                 (setv sys.stdout (StringIO))
-                
-                (print (.format "DEBUG[InterruptibleEval.run] msg: {}, expr: {}, eval-module: {}"
-                                self.msg self.expr eval-module)
-                       :flush True) ; debug
+                (logging.debug "InterruptibleEval.run: msg=%s, expr=%s"
+                               self.msg self.expr)
 
-                (.write p (str (hy.eval self.expr :module eval-module))))
+                ;; (logging.debug "InterruptibleEval.run: self.locals=%s, (locals)=%s, self.module=%s, module=%s"
+                ;;                self.session.locals (locals)
+                ;;                self.session.module (hy.compiler.calling_module))
+
+                (.write p (str (hy.eval self.expr :locals self.session.locals :module self.session.module))))
               (except [e Exception]
                 (setv sys.stdout oldout)
                 (.format-excp self (sys.exc-info)))
@@ -134,92 +129,18 @@
               "value" (+ "The values returned by `code` if execution was"
                          " successful. Absent if `ex` and `root-ex` are"
                          " present")}}
-  (print "DEBUG[eval]: in body of eval ======================")
-  (let [w (get-workaround (get msg "code"))]
-    (print (.format "DEBUG[eval]: w: {}" w))
-    (assoc msg "code" (w session msg))
-    (print (.format "DEBUG[eval]: msg: {}" msg))
-    (with [session.lock]
-      (when (and (is-not session.repl None) (.is-alive session.repl))
-        (.join session.repl))
-      (print (.format "DEBUG[eval]: (type session): {}" (type session)))
-      (print (.format "DEBUG[eval]: (dir session): {}" (dir session)))
-      (setv session.repl
-            (InterruptibleEval msg session
-              (fn [message]
-                (print (.format "DEBUG[InterruptibleEval]: message: {}" message))
-                (assoc message "id" (.get msg "id"))
-                (.write session message transport))))
-      (print (.format "DEBUG[eval]: session.repl: {}" session.repl))
-      (.start session.repl))))
-
-(defclass LightTableEval [InterruptibleEval]
-  ; """Repl simulation. This is a thread so hangs don't block everything."""
-  (defn run [self]
-    (let [code (last (.values (get (.tokenize self (get self.msg "data")) 0)))
-          output []
-          oldout sys.stdout]
-      (try
-        (setv self.tokens (.tokenize self code))
-        (except [e Exception]
-          (.format-excp self (sys.exc-info))
-          ;; Since we cant get the keywords we get the values
-          (self.writer {"status" ["done"] "id" (get self.msg "id")})) 
-        (else
-          ; TODO: add 'eval_msg' updates too the current session
-          (for [i self.tokens]
-            (let [p (StringIO)]
-              (try
-                (do
-                  (setv sys.stdout (StringIO))
-                  (.write p (str (eval i eval-module.__dict__ "__main__"))))
-                (except [e Exception]
-                  (setv sys.stdout oldout)
-                  (def err (first (sys.exc-info)))
-                  (def exc (second (sys.exc-info)))
-                  (def tb (get (sys.exc-info) 2))
-                  (def out "{:meta (:line %s :column %s :end-line %s :end-column %s) :result %s}")
-                  (def out (+ "{:meta {:line "
-                              (str i.start-line)
-                              ", :column "
-                              (str i.start-column)
-                              ", :end-line "
-                              (str i.end-line)
-                              ", :end-column "
-                              (str i.end-column)
-                              "}, :result \""
-                              (str (.join "" (.format-exception-only traceback (type exc) exc)))
-                              "\", :stack \""
-                              (str (.replace (.join "" (.format-exception traceback err exc tb)) "\"" ""))
-                              "\", :ex true}"))
-                  (.append output out))
-                (else
-                  ; Needs to refactor this
-                  (def out "{:meta (:line %s :column %s :end-line %s :end-column %s) :result %s}")
-                  (def out (+ "{:meta {:line "
-                              (str i.start-line)
-                              ", :column "
-                              (str i.start-column)
-                              ", :end-line "
-                              (str i.end-line)
-                              ", :end-column "
-                              (str i.end-column)
-                              "}, :result \""
-                              (.strip (str (if (= (.getvalue p) "None") (.getvalue sys.stdout) (.getvalue p)))) 
-                              "\"}"))
-                  (.append output out)))))
-
-          (setv sys.stdout oldout)
-          (def output (.join " " output))
-          (def output (+ "(" output))
-          (def output (+ output "),"))
-          (def output (+ "{:results " output " :ns something.something}"))
-          (print output)
-          ;(def output "{:results ({:meta {:line 1, :column 1, :end-line 1, :end-column 7}, :result \"4\"}), :ns repltest.core}")
-          (self.writer {"data" output 
-                        "op" "editor.eval.clj.result"})
-          (self.writer {"status" ["done"]}))))))
-
+  (logging.debug "eval op: session=%s, msg=%s, transport=%s" session msg transport)
+  (with [session.lock]
+    (when (and (is-not session.repl None) (.is-alive session.repl))
+      (.join session.repl))
+    (setv session.repl
+          (InterruptibleEval msg session
+            ;; writer
+            (fn [message]
+              (logging.debug "InterruptibleEval writer: message=%s" message)
+              (assoc message "id" (.get msg "id"))
+              (.write session message transport))))
+    (.start session.repl)))
 
 (defop "editor.eval.clj" [session msg transport]
        {"doc" "Evaluates code."

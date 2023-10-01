@@ -1,10 +1,10 @@
 (import sys
         uuid [uuid4]
         threading [Lock])
-
 (import HyREPL.bencode [encode])
 (import HyREPL.ops [find-op])
 (require hyrule [assoc unless])
+(import hy.repl)
 
 (setv sessions {})
 
@@ -13,14 +13,16 @@
   (setv eval-id "")
   (setv repl None)
   (setv last-traceback None)
-  (setv lastmsg None) ; debug
+  (setv module None)
+  (setv locals None)
 
   (defn __init__ [self]
     (print "Session.__init__") ; debug
     (setv self.uuid (str (uuid4)))
     (assoc sessions self.uuid self)
-    ;; [NOTE] What is this used for?
     (setv self.lock (Lock))
+    (setv self.module hy.repl)
+    (setv self.locals hy.repl.__dict__)
     None)
 
   (defn __str__ [self]
@@ -34,7 +36,6 @@
     (unless (in "session" msg)
       (assoc msg "session" self.uuid))
     (print "DEBUG[Session.write]: out:" msg :flush True)
-    (setv self.lastmsg msg) ; debug
     (print "out:" msg :file sys.stderr)
     (try
       (do

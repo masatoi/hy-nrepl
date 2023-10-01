@@ -15,7 +15,7 @@
 (defn get-workaround [code]
   (let [rv None]
     (for [w (.keys workarounds)]
-      (when (or (and (callable? w) (w code)) (= w code))
+      (when (or (and (is-callable w) (w code)) (= w code))
         (setv rv (get workarounds w))
       (break)))
 

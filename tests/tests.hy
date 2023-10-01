@@ -42,6 +42,7 @@
     (print "in TestServer __enter__")
     (.start self.t)
     self)
+
   (defn __exit__ [self #* args]
     (print "in TestServer __exit__")
     (.shutdown self.s)
@@ -174,14 +175,12 @@
         (= (len ret) 2)
         (= (. value ["value"]) "9")
         (in "done" (. status ["status"]))
-        (= (. value ["session"]) (. status ["session"]))))
+        (= (. value ["session"]) (. status ["session"])))
 
-
-    ;; (setv session-id (. status ["session"]))
-    ;; (print (.format "DEBUG[test-code-eval] session-id: {}" session-id) :flush True)
-    ;; (soc-send {"op" "interrupt" "session" session-id})
-    
-    ))
+      (setv session-id (. status ["session"]))
+      (print (.format "DEBUG[test-code-eval] session-id: {}" session-id) :flush True)
+      (soc-send {"op" "interrupt" "session" session-id})
+      )))
 
 
 (defn test-stdout-eval []
