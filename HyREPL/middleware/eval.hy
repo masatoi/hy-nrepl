@@ -24,6 +24,8 @@
 (logger.addHandler handler)
 (logger.setLevel logging.DEBUG)
 
+(setv eval-module None)
+
 (defclass HyReplSTDIN [Queue]
   ; """This is hack to override sys.stdin."""
   (defn __init__ [self write]
@@ -53,6 +55,7 @@
     (setv self.writer writer)
     (setv self.msg msg)
     (setv self.session session)
+    (setv eval-module session.module)
     (setv sys.stdin (HyReplSTDIN writer))
     ;; we're locked under self.session.lock, so modification is safe
     (setv self.session.eval-id (.get msg "id"))
@@ -84,11 +87,6 @@
                 (setv sys.stdout (StringIO))
                 (logging.debug "InterruptibleEval.run: msg=%s, expr=%s"
                                self.msg self.expr)
-
-                ;; (logging.debug "InterruptibleEval.run: self.locals=%s, (locals)=%s, self.module=%s, module=%s"
-                ;;                self.session.locals (locals)
-                ;;                self.session.module (hy.compiler.calling_module))
-
                 (.write p (str (hy.eval self.expr :locals self.session.locals :module self.session.module))))
               (except [e Exception]
                 (setv sys.stdout oldout)
@@ -103,16 +101,19 @@
     (let [exc-type (first trace)
           exc-value (second trace)
           exc-traceback (get trace 2)]
+      (logging.debug "InterruptibleEval.format-excp : trace=%s" trace)
       (setv self.session.last-traceback exc-traceback)
       (traceback.print_tb exc-traceback)
       (self.writer {"status" ["eval-error"]
                     "ex" (. exc-type __name__)
                     "root-ex" (. exc-type __name__)
                     "id" (.get self.msg "id")})
+      (logging.debug "InterruptibleEval.format-excp : dir=%s" (dir exc-value))
       (when (isinstance exc-value LexException)
-        (when (is exc-value.source None)
-          (setv exc-value.source ""))
-        (setv exc-value (.format "LexException: {}" exc-value.message)))
+        (logging.debug "InterruptibleEval.format-excp : text=%s, msg=%s" exc-value.text exc-value.msg)
+        (when (is exc-value.text None)
+          (setv exc-value.text ""))
+        (setv exc-value (.format "LexException: {}" exc-value.msg)))
       (self.writer {"err" (.strip (str exc-value))}))))
 
 (defop eval [session msg transport]
