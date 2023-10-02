@@ -123,7 +123,7 @@
         (when (is exc-value.text None)
           (setv exc-value.text ""))
         (setv exc-value (.format "LexException: {}" exc-value.msg)))
-      (self.writer {"err" (.strip (str exc-value))}))))
+      (self.writer {"err" (+ (.strip (str exc-value)) "\n")}))))
 
 (defop eval [session msg transport]
   {"doc" "Evaluates code."
