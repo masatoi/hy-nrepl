@@ -16,8 +16,8 @@
     r))
 
 (defn decode [thing]
-  "Decodes `thing` and returns the first parsed bencode value encountered as"
-  "well as the unparsed rest"
+  "Decodes `thing` and returns the first parsed bencode value encountered
+as well as the unparsed rest"
   (cond (.startswith thing #b"d")
         (decode-dict (cut thing 1 None))
 
@@ -30,7 +30,6 @@
         True ; assume string
         (let [delim (.find thing #b":")
               size (int (.decode (cut thing 0 delim) "utf-8"))]
-          ;; (print (.format "DEBUG[decode]: thing: {}, delim: {}, size: {}" thing delim size)) ; debug
           #((.decode (cut thing (inc delim) (+ size (inc delim))) "utf-8") ; token
              (cut thing (+ size (inc delim)) None) ; rest
             ))))
@@ -53,7 +52,6 @@
     #(rv (cut t 1 None))))
 
 (defn decode-dict [thing]
-  ;; (print (.format "DEBUG[decode-dict]: thing in decode-dict: {}" thing)) ; debug
   (let [rv {}
         k #()
         v #()
@@ -64,16 +62,14 @@
       (setv k (decode t)) ; #(key rest)
       (setv v (decode (second k)))
       (setv t (second v))
-      (assoc rv (first k) (first v))
-      ;; (print (.format "DEBUG[decode-dict]: k: {}, v: {}, t: {}, rv: {}" k v t rv) :flush True) ; debug
-      )
+      (assoc rv (first k) (first v)))
     (when (= (len t) 0)
       (raise (ValueError "Dictionary without end marker")))
     #(rv (cut t 1 None))))
 
 (defn encode [thing]
-  "Returns a bencoded string that represents `thing`. Might throw all sorts"
-  "of exceptions if you try to encode weird things. Don't do that."
+  "Returns a bencoded string that represents `thing`. Might throw all sorts
+of exceptions if you try to encode weird things. Don't do that."
   (cond (isinstance thing int)
         (encode-int thing)
 
@@ -97,7 +93,6 @@
 
 (defn encode-str [thing]
   #b(.format "{}:{}" (len #b thing) thing))
-
 
 (defn encode-bytes [thing]
   #b(.format "{}:{}" (len thing) (.decode thing "utf-8")))

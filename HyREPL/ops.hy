@@ -1,7 +1,6 @@
 ;; https://github.com/clojure/tools.nrepl/blob/34093111923031888f8bf6da457aaebc3381d67e/doc/ops.md
 ;; Incomplete ops:
 ;; - load-file (file name not handled)
-;; - eval
 
 (import sys)
 (import hy.models)
@@ -20,13 +19,8 @@
     (raise (TypeError "Description must be a dictionary.")))
   (setv fn-checked
         `(fn [~@args]
-           ;; (print (.format "DEBUG[defop fn-checked]: before check, {}, {}"
-           ;;                 (.get ~desc "requires" {})
-           ;;                 (.keys (.get ~desc "requires" {})))
-           ;;        :flush True)
            (setv g!failed False)
            (for [g!r (.keys (.get ~desc "requires" {}))]
-             ;; (print (.format "DEBUG[defop fn-checked]: g!r: {}" g!r) :flush True)
              (if (in g!r (second ~args))
                  None
                  (do
@@ -36,7 +30,6 @@
                             "missing" (str g!r)} (nth 2 ~args))
                    (setv g!failed True)
                    (break))))
-           ;; (print (.format "DEBUG[defop fn-checked]: after check, g!failed: {}" g!failed) :flush True)
            (if g!failed
                None
                (do ~@body))))
@@ -62,7 +55,6 @@
   (let [s (Session)]
     (.write session {"status" ["done"] "id" (.get msg "id") "new-session" (str s)} transport)))
 
-
 (defop close [session msg transport]
   {"doc" "Closes the specified session"
    "requires" {"session" "The session to close"}
@@ -79,13 +71,11 @@
     (except [e KeyError]))
   (.close transport))
 
-
 (defn make-version [[major 0] [minor 0] [incremental 0]]
   {"major" major
    "minor" minor
    "incremental" incremental
    "version-string" (.join "." (map str [major minor incremental]))})
-
 
 (defop describe [session msg transport]
   {"doc" "Describe available commands"
@@ -96,7 +86,6 @@
               "versions" "Map containing version maps, for example of the nREPL protocol supported by this server"}}
                                 ; TODO: don't ignore verbose argument
                                 ; TODO: more versions: Python, Hy
-  (print "DEBUG: in body of describe" :flush True)
   (.write session
           {"status" ["done"]
            "id" (.get msg "id")
@@ -107,7 +96,6 @@
            "session" (.get msg "session")}
           transport))
 
-
 (defop stdin [session msg transport]
        {"doc" "Feeds value to stdin"
        "requires" { "value" "value to feed in" }
@@ -115,7 +103,6 @@
        "returns" {"status" "\"need-input\" if more input is needed"}}
        (.put sys.stdin (get msg "value"))
        (.task-done sys.stdin))
-
 
 (defop "ls-sessions" [session msg transport]
        {"doc" "Lists running sessions"
@@ -129,7 +116,6 @@
                 "id" (.get msg "id")
                 "session" session.uuid}
                transport))
-
 
 (defop "client.init" [session msg transport]
   {"doc" "Inits the Lighttable client"
