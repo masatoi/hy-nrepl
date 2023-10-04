@@ -2,11 +2,11 @@
   sys
   threading
   time
-  socketserver [ThreadingMixIn TCPServer BaseRequestHandler])
-
-(import HyREPL.session [sessions Session])
-(import HyREPL.bencode [decode])
-(import toolz [last])
+  logging
+  socketserver [ThreadingMixIn TCPServer BaseRequestHandler]
+  HyREPL.session [sessions Session]
+  HyREPL.bencode [decode]
+  toolz [last])
 
 ;; TODO: move these includes somewhere else
 (import HyREPL.middleware [test eval complete info])
@@ -58,6 +58,15 @@
     #(t s)))
 
 (defmain [#* args]
+  ;; settings for logging
+  (logging.basicConfig
+    :level (if (in "--debug" args)
+               logging.DEBUG
+               logging.WARNING)
+    :format "%(levelname)s:%(module)s: %(message)s (at %(filename)s:%(lineno)d in %(funcName)s)")
+
+  (logging.debug "Starting hyrepl: args=%s" args)
+
   (setv port
         (if (> (len args) 0)
             (try

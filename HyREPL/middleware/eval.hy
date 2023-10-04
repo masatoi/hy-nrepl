@@ -1,28 +1,19 @@
 (import types
         sys
         threading
+        ctypes
+        traceback
+        logging
         queue [Queue]
-        io [StringIO])
-(import ctypes)
-(import traceback)
-(import hy.reader [HyReader])
-(import hy.reader.exceptions [LexException])
-(import toolz [first second last])
-(require hyrule [assoc])
-(import HyREPL.ops [ops find-op])
-(require HyREPL.ops [defop])
-(import logging)
+        io [StringIO]
+        hy.reader [HyReader]
+        hy.reader.exceptions [LexException]
+        hy.core.hy-repr [hy-repr]
+        toolz [first second last]
+        HyREPL.ops [ops find-op])
 
-(logging.basicConfig
-  :level logging.DEBUG
-  :format "%(levelname)s:%(name)s: %(message)s (at %(filename)s:%(lineno)d in %(funcName)s)")
-
-(setv logger (logging.getLogger "eval"))
-(setv handler (logging.StreamHandler))
-(handler.setLevel logging.DEBUG)
-(handler.setFormatter "%(levelname)s:%(name)s: %(message)s (at %(filename)s:%(lineno)d in %(funcName)s)")
-(logger.addHandler handler)
-(logger.setLevel logging.DEBUG)
+(require hyrule [assoc]
+         HyREPL.ops [defop])
 
 (setv eval-module None)
 
@@ -94,7 +85,7 @@
               (do
                 (setv sys.stdout (StringIO))
                 (logging.debug "InterruptibleEval.run: msg=%s, expr=%s"
-                               self.msg self.expr)
+                               self.msg (hy-repr self.expr))
                 (.write p (str (hy.eval self.expr :locals self.session.locals :module self.session.module))))
               (except [e Exception]
                 (setv sys.stdout oldout)
