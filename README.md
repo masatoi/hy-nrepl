@@ -12,7 +12,7 @@ Fireplace
 
 Experimental!
 =============
-HyREPL requires Python3 and Hy from Git. It is still a work in progress, but it
+HyREPL requires Python3 and Hy over 0.2.7. It is still a work in progress, but it
 is suitable for daily usage :)
 
 To install, run

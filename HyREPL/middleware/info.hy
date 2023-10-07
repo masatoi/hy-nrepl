@@ -1,20 +1,18 @@
 (import sys inspect)
 
-(import HyREPL.ops [ops]
-        HyREPL.middleware.eval [eval-module])
-
+(import HyREPL.ops [ops])
 (require HyREPL.ops [defop])
 
-(defn resolve-symbol [sym]
+(defn resolve-symbol [session sym]
   (try
-    (eval (HySymbol sym) (. eval-module __dict__))
+    (eval (HySymbol sym) (. session.module __dict__))
     (except [e NameError]
       (try
         (get __macros__ (mangle sym))
         (except [e KeyError]
           None)))))
 
-(defn get-info [symbol]
+(defn get-info [session symbol]
   (let [s (resolve-symbol symbol)
         d (inspect.getdoc s)
         c (inspect.getcomments s)
@@ -34,15 +32,14 @@
         (.update rv  {"arglists-str" (str sig)})))
     rv))
 
-
 (defop info [session msg transport]
-       {"doc" "Provides information on symbol"
-        "requires" {"symbol" "The symbol to look up"}
-        "returns" {"status" "done"}}
-       (print msg :file sys.stderr)
-       (let [info (get-info (.get msg "symbol"))]
-         (.write session
-                 {"value" info
-                  "id" (.get msg "id")
-                  "status" (if (empty? info) ["no-info" "done"] ["done"])}
-                 transport)))
+  {"doc" "Provides information on symbol"
+   "requires" {"symbol" "The symbol to look up"}
+   "returns" {"status" "done"}}
+  (print msg :file sys.stderr)
+  (let [info (get-info session (.get msg "symbol"))]
+    (.write session
+            {"value" info
+             "id" (.get msg "id")
+             "status" (if (empty? info) ["no-info" "done"] ["done"])}
+            transport)))

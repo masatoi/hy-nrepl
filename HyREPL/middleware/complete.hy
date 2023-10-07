@@ -1,5 +1,5 @@
-; Inspired by
-; https://github.com/clojure-emacs/cider-nrepl/blob/master/src/cider/nrepl/middleware/complete.clj
+;; Inspired by
+;; https://github.com/clojure-emacs/cider-nrepl/blob/master/src/cider/nrepl/middleware/complete.clj
 
 (import sys re)
 
@@ -14,16 +14,21 @@
 (import HyREPL.ops [ops])
 (require HyREPL.ops [defop])
 
-(import HyREPL.middleware.eval [eval-module])
-
 (defn make-type [item [override-type None]]
   (let [t (type item)]
     (cond
-      [(and (is-not override-type None) (= t (. make-type __class__)))
-       override-type]
-      [(= t (. dir __class__)) "function"]
-      [(= t dict) "namespace"]
-      [True (. t __name__)])))
+      (and (is-not override-type None)
+           (= t (. make-type __class__)))
+      override-type
+
+      (= t (. dir __class__))
+      "function"
+
+      (= t dict)
+      "namespace"
+
+      True
+      (. t __name__))))
 
 (defclass TypedCompleter [hy.completer.Completer]
   (defn attr-matches [self text]
@@ -59,9 +64,11 @@
       (except [e Exception]
         (print e)
         [])))
+
   (defn global-matches [self text]
     (let [matches []]
-      (for [p (. self path) #(k v) (.items p)]
+      (for [p (. self path)
+            #(k v) (.items p)]
         (when (isinstance k str)
           (setv k (.replace k "_" "-"))
           (when (.startswith k text)
@@ -69,36 +76,39 @@
                               "type" (make-type v)}))))
       matches)))
 
-
-(defn get-completions [stem [extra None]]
-  (let [comp (TypedCompleter (. eval-module __dict__))]
+(defn get-completions [session stem [extra None]]
+  (let [comp (TypedCompleter (. session.module __dict__))]
     (cond
-      [(in "." stem) (.attr-matches comp stem)]
-      [True (.global-matches comp stem)])))
+      (in "." stem)
+      (.attr-matches comp stem)
 
+      True
+      (.global-matches comp stem))))
 
-(defop complete [session msg transport]
-       {"doc" "Returns a list of symbols matching the specified (partial) symbol."
-        "requires" {"prefix" "The symbol to look up"
-                    "session" "The current session"}
-        "optional" {"context" "Completion context"
-                    "extra-metadata" "List of additional metadata"}
-        "returns" {"completions" "A list of possible completions"}}
-       (print "Complete: " msg :file sys.stderr)
-       (.write session {"id" (.get msg "id")
-                        "completions" (get-completions (.get msg "prefix") (.get msg "extra-metadata" []))
-                        "status" ["done"]}
-               transport))
+;; completions
+;; Provides a list of completion candidates.
+;;
+;; Required parameters
+;; :prefix The prefix to complete.
+;;
+;; Optional parameters
+;; :complete-fn The fully qualified name of a completion function to use instead of the default one (e.g. my.ns/completion).
+;;
+;; :ns The namespace in which we want to obtain completion candidates. Defaults to *ns*.
+;;
+;; :options A map of options supported by the completion function. Supported keys: extra-metadata (possible values: :arglists, :docs).
+;;
+;; Returns
+;; :completions A list of completion candidates. Each candidate is a map with :candidate and :type keys. Vars also have a :ns key.
 
-;; (defop completions [session msg transport]
-;;        {"doc" "Returns a list of symbols matching the specified (partial) symbol."
-;;         "requires" {"prefix" "The symbol to look up"
-;;                     "session" "The current session"}
-;;         "optional" {"context" "Completion context"
-;;                     "extra-metadata" "List of additional metadata"}
-;;         "returns" {"completions" "A list of possible completions"}}
-;;        (print "Complete: " msg :file sys.stderr)
-;;        (.write session {"id" (.get msg "id")
-;;                         "completions" (get-completions (.get msg "symbol") (.get msg "extra-metadata" []))
-;;                         "status" ["done"]}
-;;                transport))
+(defop completions [session msg transport]
+  {"doc" "Returns a list of symbols matching the specified (partial) symbol."
+   "requires" {"prefix" "The symbol to look up"}
+   "optional" {"context" "Completion context"
+               "extra-metadata" "List of additional metadata"}
+   "returns" {"completions" "A list of possible completions"}}
+  (print "Complete: " msg :file sys.stderr)
+  (.write session {"id" (.get msg "id")
+                   "completions" (get-completions session (.get msg "prefix") (.get msg "extra-metadata" []))
+                   "status" ["done"]}
+          transport))
