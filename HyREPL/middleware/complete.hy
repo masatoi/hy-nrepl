@@ -85,23 +85,11 @@
       True
       (.global-matches comp stem))))
 
-;; completions
-;; Provides a list of completion candidates.
-;;
-;; Required parameters
-;; :prefix The prefix to complete.
-;;
-;; Optional parameters
-;; :complete-fn The fully qualified name of a completion function to use instead of the default one (e.g. my.ns/completion).
-;;
-;; :ns The namespace in which we want to obtain completion candidates. Defaults to *ns*.
-;;
-;; :options A map of options supported by the completion function. Supported keys: extra-metadata (possible values: :arglists, :docs).
-;;
-;; Returns
-;; :completions A list of completion candidates. Each candidate is a map with :candidate and :type keys. Vars also have a :ns key.
 
-(defop completions [session msg transport]
+;; complete
+;; https://docs.cider.mx/cider-nrepl/nrepl-api/ops.html#complete
+
+(defop complete [session msg transport]
   {"doc" "Returns a list of symbols matching the specified (partial) symbol."
    "requires" {"prefix" "The symbol to look up"}
    "optional" {"context" "Completion context"
@@ -110,5 +98,20 @@
   (print "Complete: " msg :file sys.stderr)
   (.write session {"id" (.get msg "id")
                    "completions" (get-completions session (.get msg "prefix") (.get msg "extra-metadata" []))
+                   "status" ["done"]}
+          transport))
+
+;; completions
+;; built-in ops
+(defop completions [session msg transport]
+  {"doc" "Returns a list of symbols matching the specified (partial) symbol."
+   "requires" {"prefix" "The symbol to look up"}
+   "optional" {"complete-fn" "The fully qualified name of a completion function to use instead of the default one (e.g. my.ns/completion)."
+               "ns" "The namespace in which we want to obtain completion candidates. Defaults to *ns*."
+               "options" "A map of options supported by the completion function. Supported keys: extra-metadata (possible values: :arglists, :docs)"}
+   "returns" {"completions" "A list of possible completions"}}
+  (print "Complete: " msg :file sys.stderr)
+  (.write session {"id" (.get msg "id")
+                   "completions" (get-completions session (.get msg "prefix"))
                    "status" ["done"]}
           transport))
