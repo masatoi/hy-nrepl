@@ -2,7 +2,8 @@
 ;; Incomplete ops:
 ;; - load-file (file name not handled)
 
-(import sys)
+(import sys
+        logging)
 (import hy.models)
 (require hyrule [unless defmacro/g! assoc])
 (import toolz [first second nth])
@@ -38,11 +39,10 @@
   `(assoc ops ~n ~o))
 
 (defn find-op [op]
-  (print op)
   (if (in op ops)
     (get ops op :f)
     (fn [s m t]
-      (print (.format "Unknown op {} called" op) :file sys.stderr)
+      (logging.error "Unknown op: %s" op)
       (.write s {"status" ["done"] "id" (.get m "id")} t))))
 
 (defop clone [session msg transport]
@@ -50,7 +50,7 @@
    "requires" {}
    "optional" {"session" "The session to be cloned. If this is left out, the current session is cloned"}
    "returns" {"new-session" "The ID of the new session"}}
-  (print "[clone] before load Session")
+  (logging.info "[clone] before load Session")
   (import HyREPL.session [Session]) ; Imported here to avoid circ. dependency
   (let [s (Session)]
     (.write session {"status" ["done"] "id" (.get msg "id") "new-session" (str s)} transport)))
@@ -84,8 +84,8 @@
    "returns" {"aux" "Map of auxiliary data"
               "ops" "Map of operations supported by this nREPL server"
               "versions" "Map containing version maps, for example of the nREPL protocol supported by this server"}}
-                                ; TODO: don't ignore verbose argument
-                                ; TODO: more versions: Python, Hy
+  ;; TODO: don't ignore verbose argument
+  ;; TODO: more versions: Python, Hy
   (.write session
           {"status" ["done"]
            "id" (.get msg "id")

@@ -1,4 +1,5 @@
 (import sys
+        logging
         uuid [uuid4]
         threading [Lock])
 (import HyREPL.bencode [encode])
@@ -34,7 +35,7 @@
     (assert (in "id" msg))
     (unless (in "session" msg)
       (assoc msg "session" self.uuid))
-    (print "out:" msg :file sys.stderr)
+    (logging.info "out: %s" msg)
     (try
       (.sendall transport (encode msg))
       (except [e OSError]
@@ -42,5 +43,5 @@
         (setv self.status "client_gone"))))
 
   (defn handle [self msg transport]
-    (print "in:" msg :file sys.stderr)
+    (logging.info "in: %s" msg)
     ((find-op (.get msg "op")) self msg transport)))
