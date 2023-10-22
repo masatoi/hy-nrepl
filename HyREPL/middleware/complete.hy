@@ -1,7 +1,7 @@
 ;; Inspired by
 ;; https://github.com/clojure-emacs/cider-nrepl/blob/master/src/cider/nrepl/middleware/complete.clj
 
-(import sys re)
+(import sys re inspect)
 
 (import
   hy.macros
@@ -30,6 +30,24 @@
       True
       (. t __name__))))
 
+(defn snake-to-kebab [s]
+  (cond (= (len s) 0)
+        ""
+
+        (= (get s 0) "_")
+        s
+
+        True
+        (.replace s "_" "-")))
+
+(defn object-type [obj]
+  (cond (inspect.isfunction obj) "function"
+        (inspect.ismodule obj) "module"
+        (inspect.isclass obj) "class"
+        (inspect.ismethod obj) "method"
+        (inspect.isbuiltin obj) "builtin"
+        True "other"))
+
 (defclass TypedCompleter [hy.completer.Completer]
   (defn attr-matches [self text]
     (setv m (re.match r"(\S+(\.[\w-]+)*)\.([\w-]*)$" text))
@@ -38,16 +56,16 @@
     (print (dir (. self namespace)))
     (try
       (let [groups (.group m 1 3)
-            expr (.replace (first groups)"_" "-")
-            attr (.replace (second groups )"_" "-")]
+            expr (snake-to-kebab (first groups))
+            attr-prefix (snake-to-kebab (second groups))]
 
         (print "groups => " groups)
         (print "expr => " expr)
-        (print "attr => " attr)
+        (print "attr-prefix => " attr-prefix)
 
         (let [obj (eval (Symbol expr) (. self namespace))
               words (dir obj)
-              n (len attr)
+              n (len attr-prefix)
               matches []]
 
           (print "obj => " obj)
@@ -56,13 +74,18 @@
           (print "matches => " matches)
           
           (for [w words]
-            (when (= (cut w 0 n) attr)
+            (when (= (cut w 0 n) attr-prefix)
+              (setv attr (getattr obj w))
+              (setv attr-type (object-type attr))
               (.append matches
-                       {"candidate" (.format "{}.{}" expr (.replace w "_" "-"))
-                        "type" (make-type obj)})))
+                       {"candidate" (.format "{}.{}" expr
+                                             (if (= attr-type "module")
+                                                 w
+                                                 (snake-to-kebab w)))
+                        "type" attr-type})))
           matches))
       (except [e Exception]
-        (print e)
+        (print "Error in completions => " e)
         [])))
 
   (defn global-matches [self text]
@@ -70,10 +93,10 @@
       (for [p (. self path)
             #(k v) (.items p)]
         (when (isinstance k str)
-          (setv k (.replace k "_" "-"))
+          (setv k (snake-to-kebab k))
           (when (.startswith k text)
             (.append matches {"candidate" k
-                              "type" (make-type v)}))))
+                              "type" (object-type k)}))))
       matches)))
 
 (defn get-completions [session stem [extra None]]
@@ -84,7 +107,6 @@
 
       True
       (.global-matches comp stem))))
-
 
 ;; complete
 ;; https://docs.cider.mx/cider-nrepl/nrepl-api/ops.html#complete
