@@ -21,7 +21,7 @@ To install, run
 
 or get it from pypi
 
-    pip install hyrepl
+    pip install git+https://github.com/masatoi/HyREPL.git
 
 To run the tests, simply execute `nosetests-3.4 -v`. The tests create (and bind
 to) a UNIX domain socket at `/tmp/HyREPL-test`.
