@@ -62,7 +62,7 @@
   (logging.basicConfig
     :level (if (in "--debug" args)
                logging.DEBUG
-               logging.INFO)
+               logging.WARNING)
     :format "%(levelname)s:%(module)s: %(message)s (at %(filename)s:%(lineno)d in %(funcName)s)")
 
   (logging.debug "Starting hyrepl: args=%s" args)
