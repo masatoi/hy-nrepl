@@ -1,5 +1,6 @@
 (import sys inspect logging)
 (import hy.models [Symbol])
+(import hy.reader.mangling [mangle])
 (import HyREPL.ops [ops])
 (require HyREPL.ops [defop])
 (import toolz [first second nth])
@@ -9,7 +10,7 @@
     (eval (Symbol sym) (. session.module __dict__))
     (except [e NameError]
       (try
-        (get __macros__ (mangle sym))
+        (get _hy_macros (mangle sym))
         (except [e KeyError]
           None)))))
 
