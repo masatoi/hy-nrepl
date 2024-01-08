@@ -1,13 +1,57 @@
-(import sys inspect logging)
+(import sys inspect logging types)
 (import hy.models [Symbol])
 (import hy.reader.mangling [mangle])
 (import HyREPL.ops [ops])
 (require HyREPL.ops [defop])
 (import toolz [first second nth])
 
-(defn resolve-symbol [session sym]
+;; ;;; debug-print
+;; (defreader >
+;;   (setv code (.parse-one-form &reader))
+;;   `(do (print (hy.core.hy-repr.hy-repr '~code) " => " ~code) ~code))
+
+;; (defreader slice
+;;   (defn parse-node []
+;;     (let [node (when (!= ":" (.peekc &reader))
+;;                  (.parse-one-form &reader))]
+;;       (if (= node '...) 'Ellipse node)))
+
+;;   (with [(&reader.end-identifier ":")]
+;;     (let [nodes []]
+;;       (&reader.slurp-space)
+;;       (nodes.append (parse-node))
+;;       (while (&reader.peek-and-getc ":")
+;;         (nodes.append (parse-node)))
+
+;;       `(slice ~@nodes))))
+
+(defn resolve-module [sym]
+  (setv m (re.match r"(\S+(\.[\w-]+)*)\.([\w-]*)$" sym))
+  (setv groups (.group m 1 3))
+  groups)
+
+(defn split-string-by-first-dot [input-string]
+  (input-string.split "." 1))
+
+(defn contain-dot? [input-string]
+  (in "." input-string))
+
+(defn is-module? [obj]
+  (isinstance obj types.ModuleType))
+
+(defn %resolve-symbol [m sym]
+  (if (contain-dot? sym)
+      (let [parts (split-string-by-first-dot sym)
+            result (eval (Symbol (mangle (get parts 0))) (. m __dict__))]
+        (logging.debug "%resolve-symbol: parts= %s, result= %s" parts result)
+        (if (is-module? result)
+            (%resolve-symbol result (get parts 1))
+            (eval (mangle sym) (. m __dict__))))
+      (eval (Symbol (mangle sym)) (. m __dict__))))
+
+(defn resolve-symbol [m sym]
   (try
-    (eval (Symbol sym) (. session.module __dict__))
+    (%resolve-symbol m sym)
     (except [e NameError]
       (try
         (get _hy_macros (mangle sym))
@@ -15,7 +59,7 @@
           None)))))
 
 (defn get-info [session symbol]
-  (let [s (resolve-symbol session symbol)
+  (let [s (resolve-symbol session.module symbol)
         d (inspect.getdoc s)
         c (inspect.getcomments s)
         sig (and (callable s) (inspect.signature s))

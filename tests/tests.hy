@@ -38,6 +38,7 @@
 
     (setv sys.stderr (StringIO))
     None)
+
   (defn __enter__ [self]
     (print "in TestServer __enter__")
     (.start self.t)
