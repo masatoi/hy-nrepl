@@ -5,7 +5,7 @@
 (import sys
         logging)
 (import hy.models)
-(require hyrule [unless defmacro/g! assoc])
+(require hyrule [unless defmacro/g!])
 (import toolz [first second nth])
 
 (setv ops {})
@@ -36,7 +36,7 @@
                (do ~@body))))
   (setv n (str name))
   (setv o {:f fn-checked :desc desc})
-  `(assoc ops ~n ~o))
+  `(setv (get ops ~n) ~o))
 
 (defn find-op [op]
   (if (in op ops)
