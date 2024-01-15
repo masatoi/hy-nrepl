@@ -113,7 +113,7 @@
         (setv exc-value (.format "LexException: {}" exc-value.msg)))
       (self.writer {"err" (+ (.strip (str exc-value)) "\n")}))))
 
-(defop eval [session msg transport]
+(defop "eval" [session msg transport]
   {"doc" "Evaluates code."
    "requires" {"code" "The code to be evaluated"}
    "optional" {"session" (+ "The ID of the session in which the code will"
@@ -140,32 +140,7 @@
               (.write session message transport))))
     (.start session.repl)))
 
-(defop "editor.eval.clj" [session msg transport]
-       {"doc" "Evaluates code."
-        "requires" {"data" "The code to be evaluated"}
-        "optional" {"session" (+ "The ID of the session in which the code will"
-                                 " be evaluated. If absent, a new session will"
-                                 " be generated")
-                    "id" "An opaque message ID that will be included in the response"}
-        "returns" {"ex" "Type of the exception thrown, if any. If present, `value` will be absent."
-                   "ns" (+ "The current namespace after the evaluation of `code`."
-                           " For HyREPL, this will always be `Hy`.")
-                   "root-ex" "Same as `ex`"
-                   "value" (+ "The values returned by `code` if execution was "
-                              "successful. Absent if `ex` and `root-ex` are
-                              present")}}
-       (let [d true]
-         (with [session.lock]
-           (when (and (is-not session.repl None) (.is-alive session.repl))
-             (.join session.repl))
-           (setv session.repl
-             (LightTableEval msg session
-                                (fn [x]
-                                  (assoc x "id" (.get msg "id"))
-                                  (.write session x transport))))
-           (.start session.repl))))
-
-(defop interrupt [session msg transport]
+(defop "interrupt" [session msg transport]
   {"doc" "Interrupt a running eval"
    "requires" {"session" "The session id used to start the eval to be interrupted"}
    "optional" {"interrupt-id" "The ID of the eval to interrupt"}

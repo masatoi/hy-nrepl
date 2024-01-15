@@ -111,7 +111,7 @@
 ;; complete
 ;; https://docs.cider.mx/cider-nrepl/nrepl-api/ops.html#complete
 
-(defop complete [session msg transport]
+(defop "complete" [session msg transport]
   {"doc" "Returns a list of symbols matching the specified (partial) symbol."
    "requires" {"prefix" "The symbol to look up"}
    "optional" {"context" "Completion context"
@@ -125,7 +125,7 @@
 
 ;; completions
 ;; built-in ops
-(defop completions [session msg transport]
+(defop "completions" [session msg transport]
   {"doc" "Returns a list of symbols matching the specified (partial) symbol."
    "requires" {"prefix" "The symbol to look up"}
    "optional" {"complete-fn" "The fully qualified name of a completion function to use instead of the default one (e.g. my.ns/completion)."
