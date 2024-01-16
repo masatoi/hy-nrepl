@@ -2,8 +2,6 @@
 (import io [StringIO]
         socketserver [ThreadingMixIn UnixStreamServer TCPServer])
 
-(os.chdir "/Users/wiz/hy/HyREPL/") ; for development
-
 (import HyREPL.bencode [encode decode decode-multiple])
 (import HyREPL.server [start-server ReplServer ReplRequestHandler])
 (import HyREPL.session [sessions])
@@ -85,30 +83,6 @@
             (break)))))
     (.close s)
     r))
-
-(defn test-bencode []
-  (let [d {"foo" 42 "spam" [1 2 "a"]}]
-    (assert (= d (-> d encode decode first))))
-
-  (let [d {}]
-    (assert (= d (-> d encode decode first))))
-
-  (let [d {"requires" {}
-           "optional" {"session" "The session to be cloned."}}]
-    (assert (= d (-> d encode decode first))))
-
-  (let [d (decode-multiple (+
-                             #b"d5:value1:47:session36:31594b80-7f2e-4915-9969-f1127d562cc42:ns2:Hye"
-                             #b"d6:statusl4:donee7:session36:31594b80-7f2e-4915-9969-f1127d562cc4e"))]
-    (assert-multi
-      (= (len d) 2)
-      (isinstance (first d) dict)
-      (isinstance (second d) dict)
-      (= (. d [0] ["value"]) "4")
-      (= (. d [0] ["ns"]) "Hy")
-      (isinstance (. d [1] ["status"]) list)
-      (= (len (. d [1] ["status"])) 1)
-      (= (. d [1] ["status"] [0]) "done"))))
 
 (defn test-describe []
   "simple eval

@@ -1,18 +1,29 @@
-(import unittest)
-(import HyREPL.middleware.eval *)
+(import HyREPL.session [Session])
+(import HyREPL.middleware.eval [InterruptibleEval])
+(import uuid [uuid4])
+(import io [StringIO])
 
-(defclass TestListOps [unittest.TestCase]
-  (defn test1 [self]
-    (setv lst '(a b c))
-    (self.assertEqual (car lst) 'a)
-    (self.assertEqual (cdr lst) '(b c))
-    (self.assertTrue (evenp 2))
-    (self.assertTrue (oddp 3))))
+(defn testing [code expected-result]
+  (setv msg {"code" code
+             "id" (str (uuid4))})
+  (setv session (Session))
+  (setv result [])
+  (setv writer (fn [x]
+                 (nonlocal result)
+                 (.append result x))) ; mock writer
+  (setv eval-instance  (InterruptibleEval msg session writer))
+  (eval-instance.run)
+  (print (.format "result: {}" result))
+  (assert (= result expected-result)))
 
-(defclass TestNumberOps [unittest.TestCase]
-  (defn test1 [self]
-    (self.assertTrue (evenp 2))
-    (self.assertTrue (oddp 3))))
+(defn test_eval []
+  (testing "(print \"Hello, world!\")"
+           [{"out" "Hello, world!\n"}
+            {"value" "None"
+             "ns" "Hy"}
+            {"status" ["done"]}])
 
-(when (= __name__ "__main__")
-  (unittest.main))
+  (testing "(+ 2 2)"
+           [{"value" "4"
+             "ns" "Hy"}
+            {"status" ["done"]}]))

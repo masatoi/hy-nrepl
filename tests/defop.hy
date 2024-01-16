@@ -1,15 +1,7 @@
 (import sys)
-
+(import toolz [first second nth])
 (import HyREPL.ops [ops find-op])
 (require HyREPL.ops [defop])
-
-;; These are needed after the macro expansion of defops so need import here.
-(require hyrule [unless])
-(import toolz [first second nth])
-
-(defmacro assert-multi [#* cases]
-  (let [s (lfor c cases `(assert ~c))]
-    `(do ~s)))
 
 (defclass MockSession []
   (defn __init__ [self]
@@ -20,45 +12,44 @@
     (.append self.messages msg)))
   
 (defn test-defop-verify-message []
-  (let [s (MockSession)
-        msg-local None]
+  (let [s (MockSession)]
     (defop "vtest1-requires" [session msg transport]
-      {"requires" {"foo" "the foo"}}
+      {"requires" {"foo" "the foo parameter(require)"}}
       (.write session (.get msg "foo") transport))
+
+    ;; missing required parameter
     ((find-op "vtest1-requires")
       s {} None)
+    (assert (= (first s.messages) {"status" ["done"]
+                                   "id" None
+                                   "missing" "foo"}))
+
+    ;; return foo parameter value
     ((find-op "vtest1-requires")
       s {"foo" 'bar} None)
-    (assert-multi (= (len s.messages) 2)
-                  (= (first s.messages) {"status" ["done"]
-                                         "id" None
-                                         "missing" "foo"})
-                  (= (second s.messages) 'bar))))
+    (assert (= (second s.messages) 'bar))))
 
-(defn test-defop-verify-message-eval []
+(defn test-defop-optional-parameter []
   (let [s (MockSession)]
-    (defop eval1 [session msg transport]
-      {"doc" "Evaluates code."
-       "requires" {"code" "The code to be evaluated"}
-       "optional" {"session" (+ "The ID of the session in which the code will"
-                                " be evaluated. If absent, a new session will"
-                                " be generated")
-                   "id" "An opaque message ID that will be included in the response"}
-       "returns" {"ex" "Type of the exception thrown, if any. If present, `value` will be absent."
-                  "ns" (+ "The current namespace after the evaluation of `code`."
-                          " For HyREPL, this will always be `Hy`.")
-                  "root-ex" "Same as `ex`"
-                  "value" (+ "The values returned by `code` if execution was"
-                             " successful. Absent if `ex` and `root-ex` are"
-                             " present")}}
-      (print (.format "msg: {}" (get msg "code")) :flush True)
-      (.write session (.get msg "code") transport)
-      (.write session (.get msg "session") transport))
+    (defop "vtest2-optionals" [session msg transport]
+      {"requires" {}
+       "optional" {"foo" "the foo parameter(optional)"}}
+      (.write session (.get msg "foo") transport))
 
-    ((find-op "eval1")
-      s {"code" "(+ 2 2)" "session" 'bar} None)
+    ;; missing optional parameter
+    ((find-op "vtest2-optionals")
+      s {} None)
+    (assert (= (first s.messages) None))
 
-    (print (.format "message: {}" s.messages) :flush True)))
+    ;; return foo parameter value
+    ((find-op "vtest2-optionals")
+      s {"foo" 'bar} None)
+    (assert (= (second s.messages) 'bar))
+
+    ;; unpermitted parameters are just ignored
+    ((find-op "vtest2-optionals")
+      s {"baz" 'quz} None)
+    (assert (= (nth 2 s.messages) None))))
 
 (defn test-defop-success []
   (defop o1 [] {})
@@ -66,12 +57,11 @@
   (defop o3 [] {"doc" "I'm a docstring!"})
   (defop "o4-something.foo" [] {})
 
-  (assert-multi
-    (in "o1" ops)
-    (in "o2" ops)
-    (in "o3" ops)
-    (in "o4-something.foo" ops)
-    (= (get ops "o3" :desc) {"doc" "I'm a docstring!"})))
+  (assert (in "o1" ops))
+  (assert (in "o2" ops))
+  (assert (in "o3" ops))
+  (assert (in "o4-something.foo" ops))
+  (assert (= (get ops "o3" :desc) {"doc" "I'm a docstring!"})))
 
 (defmacro macroexpand-multi-assert-fail [#* macros]
   (let [s (lfor m macros
@@ -80,7 +70,7 @@
                    (except [e hy.errors.HyMacroExpansionError])
                    (else
                      (assert False (.format "Compiling {} should have failed" ~m)))))]
-  `(do ~s)))
+    `(do ~s)))
 
 (defn test-defop-fail []
   (macroexpand-multi-assert-fail
