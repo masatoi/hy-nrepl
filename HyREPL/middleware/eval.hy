@@ -90,7 +90,8 @@
               (else
                 (when (and (= (.getvalue p) "None") (bool (.getvalue sys.stdout)))
                   (self.writer {"out" (.getvalue sys.stdout)}))
-                (self.writer {"value" (.getvalue p) "ns" (.get self.msg "ns" "Hy")}))))
+                (self.writer {"value" (.getvalue p)
+                              "ns" (.get self.msg "ns" "Hy")}))))
           (setv sys.stdout oldout)
           (self.writer {"status" ["done"]})))))
 

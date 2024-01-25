@@ -5,26 +5,6 @@
 (require HyREPL.ops [defop])
 (import toolz [first second nth])
 
-;; ;;; debug-print
-;; (defreader >
-;;   (setv code (.parse-one-form &reader))
-;;   `(do (print (hy.core.hy-repr.hy-repr '~code) " => " ~code) ~code))
-
-;; (defreader slice
-;;   (defn parse-node []
-;;     (let [node (when (!= ":" (.peekc &reader))
-;;                  (.parse-one-form &reader))]
-;;       (if (= node '...) 'Ellipse node)))
-
-;;   (with [(&reader.end-identifier ":")]
-;;     (let [nodes []]
-;;       (&reader.slurp-space)
-;;       (nodes.append (parse-node))
-;;       (while (&reader.peek-and-getc ":")
-;;         (nodes.append (parse-node)))
-
-;;       `(slice ~@nodes))))
-
 (defn resolve-module [sym]
   (setv m (re.match r"(\S+(\.[\w-]+)*)\.([\w-]*)$" sym))
   (setv groups (.group m 1 3))
@@ -100,5 +80,5 @@
     (.write session
             {"info" info
              "id" (.get msg "id")
-             "status" (if (= info {}) ["no-info" "done"] ["done"])}
+             "status" ["done"]}
             transport)))
