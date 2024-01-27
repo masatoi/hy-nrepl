@@ -12,6 +12,7 @@ setup(name="HyREPL",
       package_data={
           'HyREPL': ['*.hy'],
           'HyREPL.middleware': ['*.hy'],
+          'HyREPL.ops': ['*.hy'],
       },
       author="Morten Linderud, Gregor Best, Satoshi Imai",
       author_email=

@@ -3,7 +3,7 @@
         uuid [uuid4]
         threading [Lock])
 (import HyREPL.bencode [encode])
-(import HyREPL.ops [find-op])
+(import HyREPL.ops.utils [find-op])
 (require hyrule [assoc unless])
 (import hy.repl)
 

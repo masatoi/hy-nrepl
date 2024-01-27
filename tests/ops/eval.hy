@@ -1,5 +1,5 @@
 (import HyREPL.session [Session])
-(import HyREPL.middleware.eval [InterruptibleEval])
+(import HyREPL.ops.eval [InterruptibleEval])
 (import uuid [uuid4])
 (import io [StringIO])
 (import toolz [first])

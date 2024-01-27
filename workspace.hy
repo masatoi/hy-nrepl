@@ -239,7 +239,7 @@ Client gone: [Errno 9] Bad file descriptor
 ;;; InterruptibleEval を単体テストしたい
 
 (import HyREPL.session [Session])
-(import HyREPL.middleware.eval [InterruptibleEval])
+(import HyREPL.ops.eval [InterruptibleEval])
 
 (setv sess1 (Session))
 (setv msg1 {"op" "eval" "code" "(+ 2 2)"})

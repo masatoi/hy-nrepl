@@ -40,7 +40,9 @@ as well as the unparsed rest"
        (cut thing (inc end) None))))
 
 (defn decode-list [thing]
-  (let [rv [] i #() t thing]
+  (let [rv []
+        i #()
+        t thing]
     (while (> (len t) 0)
       (setv i (decode t))
       (.append rv (first i))
@@ -52,20 +54,19 @@ as well as the unparsed rest"
     #(rv (cut t 1 None))))
 
 (defn decode-dict [thing]
-  (let [rv {}
-        k #()
-        v #()
-        t thing]
-    (while (> (len t) 0)
-      (when (.startswith t #b"e")
+  (let [result {}
+        key #()
+        val #()]
+    (while (> (len thing) 0)
+      (when (.startswith thing #b"e")
         (break))
-      (setv k (decode t)) ; #(key rest)
-      (setv v (decode (second k)))
-      (setv t (second v))
-      (assoc rv (first k) (first v)))
-    (when (= (len t) 0)
+      (setv key (decode thing)) ; #(key rest)
+      (setv val (decode (second key)))
+      (setv thing (second val))
+      (assoc result (first key) (first val)))
+    (when (= (len thing) 0)
       (raise (ValueError "Dictionary without end marker")))
-    #(rv (cut t 1 None))))
+    #(result (cut thing 1 None))))
 
 (defn encode [thing]
   "Returns a bencoded string that represents `thing`. Might throw all sorts

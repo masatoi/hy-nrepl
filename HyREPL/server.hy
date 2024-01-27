@@ -9,7 +9,8 @@
   toolz [last])
 
 ;; TODO: move these includes somewhere else
-(import HyREPL.middleware [eval complete info])
+;; (import HyREPL.ops [eval complete info])
+(import HyREPL.ops)
 
 (import hyrule [inc])
 (require hyrule [defmain])

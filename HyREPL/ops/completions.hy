@@ -11,8 +11,8 @@
 
 (import toolz [first second])
 
-(import HyREPL.ops [ops])
-(require HyREPL.ops [defop])
+(import HyREPL.ops.utils [ops])
+(require HyREPL.ops.utils [defop])
 
 (defn make-type [item [override-type None]]
   (let [t (type item)]
@@ -108,23 +108,7 @@
       True
       (.global-matches comp stem))))
 
-;; complete
-;; https://docs.cider.mx/cider-nrepl/nrepl-api/ops.html#complete
-
-(defop "complete" [session msg transport]
-  {"doc" "Returns a list of symbols matching the specified (partial) symbol."
-   "requires" {"prefix" "The symbol to look up"}
-   "optional" {"context" "Completion context"
-               "extra-metadata" "List of additional metadata"}
-   "returns" {"completions" "A list of possible completions"}}
-  (print "Complete: " msg :file sys.stderr)
-  (.write session {"id" (.get msg "id")
-                   "completions" (get-completions session (.get msg "prefix") (.get msg "extra-metadata" []))
-                   "status" ["done"]}
-          transport))
-
 ;; completions
-;; built-in ops
 (defop "completions" [session msg transport]
   {"doc" "Returns a list of symbols matching the specified (partial) symbol."
    "requires" {"prefix" "The symbol to look up"}

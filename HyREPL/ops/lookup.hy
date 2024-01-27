@@ -1,8 +1,8 @@
 (import sys inspect logging types)
 (import hy.models [Symbol])
 (import hy.reader.mangling [mangle])
-(import HyREPL.ops [ops])
-(require HyREPL.ops [defop])
+(import HyREPL.ops.utils [ops])
+(require HyREPL.ops.utils [defop])
 (import toolz [first second nth])
 
 (defn resolve-module [sym]
@@ -38,37 +38,28 @@
         (except [e KeyError]
           None)))))
 
-(defn get-info [session symbol]
-  (let [s (resolve-symbol session.module symbol)
-        d (inspect.getdoc s)
-        c (inspect.getcomments s)
-        sig (and (callable s) (inspect.signature s))
-        rv {}]
-    (logging.debug "get-info: Got object %s for symbol %s" s symbol)
+(defn get-info [session symbol-name]
+  (let [symbol (resolve-symbol session.module symbol-name)
+        doc (inspect.getdoc symbol)
+        comment (inspect.getcomments symbol)
+        sig (and (callable symbol) (inspect.signature symbol))
+        result {}]
+    (logging.debug "get-info: Got object %s for symbol %s" symbol symbol-name)
     (when (is-not s None)
-      (.update rv {"doc" (or d c "No doc string")
-                   "static" "true"
-                   "ns" (or (. (inspect.getmodule s) __name__) "Hy")
-                   "name" symbol})
+      (update result
+              {"doc" (or doc comment "No doc string")
+               "static" "true"
+               "ns" (or (. (inspect.getmodule symbol) __name__) "Hy")
+               "name" symbol-name})
+      ;; get definition position
       (try
-        (.update rv
-                 "file" (inspect.getfile s))
+        (.update result
+                 {"file" (inspect.getfile symbol)
+                  "line" (second (inspect.getsourcelines requests.get))})
         (except [e TypeError]))
       (when sig
-        (.update rv  {"arglists-str" (str sig)})))
-    rv))
-
-(defop info [session msg transport]
-  {"doc" "Provides information on symbol"
-   "requires" {"symbol" "The symbol to look up"}
-   "returns" {"status" "done"}}
-  (print msg :file sys.stderr)
-  (let [info (get-info session (.get msg "symbol"))]
-    (.write session
-            {"value" info
-             "id" (.get msg "id")
-             "status" (if (= info {}) ["no-info" "done"] ["done"])}
-            transport)))
+        (.update result {"arglists-str" (str sig)})))
+    result))
 
 (defop lookup [session msg transport]
   {"doc" "Lookup symbol info"
