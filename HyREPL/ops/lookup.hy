@@ -1,4 +1,4 @@
-(import sys inspect logging types)
+(import sys inspect logging re)
 (import hy.models [Symbol])
 (import hy.reader.mangling [mangle])
 (import HyREPL.ops.utils [ops])
@@ -16,15 +16,12 @@
 (defn contain-dot? [input-string]
   (in "." input-string))
 
-(defn is-module? [obj]
-  (isinstance obj types.ModuleType))
-
 (defn %resolve-symbol [m sym]
   (if (contain-dot? sym)
       (let [parts (split-string-by-first-dot sym)
             result (eval (Symbol (mangle (get parts 0))) (. m __dict__))]
         (logging.debug "%resolve-symbol: parts= %s, result= %s" parts result)
-        (if (is-module? result)
+        (if (inspect.ismodule result)
             (%resolve-symbol result (get parts 1))
             (eval (mangle sym) (. m __dict__))))
       (eval (Symbol (mangle sym)) (. m __dict__))))
@@ -38,24 +35,67 @@
         (except [e KeyError]
           None)))))
 
+(defn find-pattern [pattern file]
+  (with [f (open file 'r)]
+    (for [[i line] (enumerate (f.readlines) :start 1)]
+      (when (re.search pattern line)
+        (return i)))
+    None))
+
+(defn find-class-definition [obj file [lang "hylang"]]
+  (cond (= lang "hylang")
+        (let [pattern r"^\s*\(\s*defclass\s+{}"]
+          (find-pattern (.format pattern obj.__name__) file))
+
+        (= lang "python")
+        (second (inspect.getsourcelines obj))
+
+        :else (raise (ValueError "Unknown lang"))))
+
+(defn get-source-details [x]
+  "Get line number, source file of x."
+  (let [file (inspect.getsourcefile x)
+        module (cond (inspect.ismodule x) x.__name__
+                     :else x.__module__)
+        ext (cut file -3 None)
+        lang (match ext
+                    ".py" "python"
+                    ".hy" "hylang")
+        lnum (cond
+               ;; function or method
+               (and (hasattr x "__code__")
+                    (hasattr x.__code__ "co_firstlineno"))
+               x.__code__.co-firstlineno
+
+               ;; class
+               (inspect.isclass x)
+               (find-class-definition x file :lang lang)
+
+               :else
+               1)]
+    {"line" lnum
+     "ns" module
+     "file" file
+     "language" lang
+     "extension" ext}))
+
 (defn get-info [session symbol-name]
   (let [symbol (resolve-symbol session.module symbol-name)
         doc (inspect.getdoc symbol)
-        comment (inspect.getcomments symbol)
         sig (and (callable symbol) (inspect.signature symbol))
         result {}]
     (logging.debug "get-info: Got object %s for symbol %s" symbol symbol-name)
-    (when (is-not s None)
-      (update result
-              {"doc" (or doc comment "No doc string")
-               "static" "true"
-               "ns" (or (. (inspect.getmodule symbol) __name__) "Hy")
-               "name" symbol-name})
+    (print (.format "symbol-name: {}" symbol-name))
+    (print (.format "symbol: {}" symbol))
+    (print (.format "session.module: {}" session.module))
+    (when (is-not symbol None)
+      (.update result
+               {"doc" (or doc "No doc string")
+                "static" "true"
+                "name" symbol-name})
       ;; get definition position
       (try
-        (.update result
-                 {"file" (inspect.getfile symbol)
-                  "line" (second (inspect.getsourcelines requests.get))})
+        (.update result (get-source-details symbol))
         (except [e TypeError]))
       (when sig
         (.update result {"arglists-str" (str sig)})))

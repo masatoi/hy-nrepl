@@ -17,12 +17,12 @@
   (setv module None)
   (setv locals None)
 
-  (defn __init__ [self]
+  (defn __init__ [self [module hy.repl]]
     (setv self.uuid (str (uuid4)))
     (assoc sessions self.uuid self)
     (setv self.lock (Lock))
-    (setv self.module hy.repl)
-    (setv self.locals hy.repl.__dict__)
+    (setv self.module module)
+    (setv self.locals module.__dict__)
     None)
 
   (defn __str__ [self]

@@ -248,3 +248,139 @@ Client gone: [Errno 9] Bad file descriptor
       (InterruptibleEval msg1 sess1 print))
 
 (.start inteval1)
+
+;;; inspect.getsources subset
+
+(require hyrule [unless])
+
+(import hyrule [inc dec])
+(import hy.compiler [hy-compile])
+
+(import pygments [highlight])
+(import pygments.lexers [get-lexer-by-name])
+(import pygments.formatters [TerminalFormatter])
+
+(import inspect [ismodule isclass getsource getsourcefile])
+
+(import hyjinx.lib [slurp])
+
+(import re)
+
+;; 関数とモジュールについては動作する
+;; クラスはファイル冒頭のみ、変数については現状動かない
+
+
+;; file_path = 'path/to/your_file.py'  # 探索対象のファイルパス
+;; pattern = r'class YourClassName\b'  # クラス名や関数名に合わせた正規表現パターン
+
+;; line_number, line_content = find_definition(file_path, pattern)
+;; if line_number:
+;;     print(f"定義が見つかりました: 行 {line_number} - {line_content}")
+;; else:
+;;     print("定義が見つかりませんでした。")
+
+
+(defn find-pattern [pattern file]
+  (with [f (open file 'r)]
+    (for [[i line] (enumerate (f.readlines) :start 1)]
+      (when (re.search pattern line)
+        (return i)))
+    None))
+
+(find-pattern "defclass" "/home/wiz/hy/HyREPL/HyREPL/session.hy")
+
+(defn find-class-definition [obj file [lang "hylang"]]
+  (let [pattern (if (= lang "hylang")
+                    r"^\s*\(\s*defclass\s+{}"
+                    r"^\s*class\s+{}\s*:")]
+    (find-pattern (.format pattern obj) file)))
+
+(find-class-definition "Session" "/home/wiz/hy/HyREPL/HyREPL/session.hy")
+(find-class-definition "RequestEncodingMixin"
+  "/home/wiz/.local/lib/python3.11/site-packages/requests/models.py" :lang "python")
+
+(defn get-source-details [x]
+  "Get line number, source file of x."
+  (let [file (getsourcefile x)
+        module (cond (ismodule x) x.__name__
+                     :else x.__module__)
+        ext (cut file -3 None)
+        lang (match ext
+                    ".py" "python"
+                    ".hy" "hylang")
+        lnum (cond
+               ;; function or method
+               (and (hasattr x "__code__")
+                    (hasattr x.__code__ "co_firstlineno"))
+               (- x.__code__.co-firstlineno 1)
+
+               ;; class
+               (isclass x)
+               (find-class-definition x.__name__ file :lang lang)
+
+               :else
+               0)]
+    {"line" lnum
+     "module" module
+     "file" file
+     "language" lang
+     "extension" ext}))
+
+(defn get-hy-source [x]
+  "Returns the source code of a hy module or the module of a hy function, class etc."
+  (let [details (get-source-details x)
+        file (:file details)
+        hy-source (slurp file)
+        module (:module details)
+        lnum (:line details)]
+    ;; TODO : handle classes
+    (if (and (hasattr x "__code__")
+             (hasattr x.__code__ "co_firstlineno"))
+        (let [lines (.split hy-source "\n")
+              rest-lines (cut lines lnum None)
+              defn-lines []
+              paren-excess 0]
+          ;; TODO : walk AST to get the relevant parts instead of guessing from parentheses
+          ;; FIXME : will break if there are odd parentheses in string
+          (for [l rest-lines]
+            (.append defn-lines l)
+            (+= paren-excess (l.count "("))
+            (-= paren-excess (l.count ")"))
+            (unless paren-excess (break)))
+          (.join "\n" defn-lines))  
+        hy-source)))
+
+(defn get-source [x]
+  "Get the source for a python or hy function, module or other object."
+  (let [details (get-source-details x)
+        lang (:language details)]
+    (cond (= lang "python") (getsource x)
+          (= lang "hylang") (get-hy-source x)
+          :else (raise (NotImplementedError f"Filetype {(:extension details)} is unknown.")))))
+
+(defn print-source [x * [bg "dark"] [linenos False]]
+  "Pretty-print the source code of a module or function, with syntax highlighting."
+  (let [details (get-source-details x)
+        padding (if linenos "      " "")
+        header f"{padding}{x}, {(:module details)}\n{padding}line {(:line details)}, {(:file details)}"
+        lexer (get-lexer-by-name (:language details))
+        formatter (TerminalFormatter :linenos linenos
+                                     :bg bg
+                                     :stripall True)]
+    (setv formatter._lineno (:line details))
+    (print)
+    (print header)
+    (unless linenos (print))
+    (print (highlight (get-source x) lexer formatter))))
+
+(defn hylight [s * [bg "dark"]]
+  "Syntax highlight a Hy string. This is nice for use in the repl - put
+`(import hyjinx.source [hylight])
+(setv repl-output-fn hylight)`
+in your .hyrc."
+  (let [formatter (TerminalFormatter :bg bg
+                                     :stripall True)
+        term (shutil.get-terminal-size)]
+    (highlight (pformat s :indent 2 :width (- term.columns 5))
+               (HyLexer)
+               formatter)))

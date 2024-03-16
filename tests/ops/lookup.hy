@@ -1,46 +1,91 @@
+(import types)
 (import HyREPL.session [Session])
-(import HyREPL.ops.eval [InterruptibleEval])
-(import uuid [uuid4])
-(import io [StringIO])
-(import toolz [first])
+(import HyREPL.ops.lookup [get-info resolve-module resolve-symbol])
+(import tests.ops.sample_module)
+(import tests.ops.sample_python_module)
 
-(defn testing [code expected-result]
-  (setv msg {"code" code
-             "id" (str (uuid4))})
-  (setv session (Session))
-  (setv result [])
-  (setv writer (fn [x]
-                 (nonlocal result)
-                 (.append result x))) ; mock writer
-  (setv eval-instance  (InterruptibleEval msg session writer))
-  (eval-instance.run)
-  (print (.format "result: {}" result))
-  (assert (= result expected-result)))
+(defn test-get-info []
+  (let [test-module (types.ModuleType "test_module" "module for testing HyREPL")
+        session (Session test-module)]
 
-(defn test-eval []
-  (testing "(print \"Hello, world!\")"
-           [{"out" "Hello, world!\n"}
-            {"value" "None"
-             "ns" "Hy"}
-            {"status" ["done"]}])
+    ;; import sample_module
+    (setv test-module.sample_module tests.ops.sample_module)
 
-  (testing "(+ 2 2)"
-           [{"value" "4"
-             "ns" "Hy"}
-            {"status" ["done"]}]))
+    ;; module
+    (let [result (get-info session "sample_module")]
+      (print (.format "result: {}" result))
+      (assert (= (get result "ns") "tests.ops.sample_module"))
+      (assert (= (get result "name") "sample_module"))
+      (assert (= (get result "doc") "No doc string"))
+      (assert (is (.get result "arglists-str") None))
+      (assert (in "/HyREPL/tests/ops/sample_module.hy" (get result "file")))
+      (assert (= (get result "line") 1))
+      (assert (= (get result "language") "hylang"))
+      (assert (= (get result "extension") ".hy")))
 
-(defn test-eval-with-exception []
-  (setv msg {"code" "(/ 1 0)"
-             "id" (str (uuid4))})
-  (setv session (Session))
-  (setv result [])
-  (setv writer (fn [x]
-                 (nonlocal result)
-                 (.append result x))) ; mock writer
-  (setv eval-instance  (InterruptibleEval msg session writer))
-  (eval-instance.run)
-  (print (.format "result: {}" result))
-  (setv eval-error (first (filter (fn [dict] (= (.get dict "status" None) ["eval-error"])) result)))
-  (assert (= (get eval-error "status") ["eval-error"]))
-  (assert (= (get eval-error "ex") "ZeroDivisionError"))
-  (assert (= (get eval-error "root-ex") "ZeroDivisionError")))
+    ;; function
+    (let [result (get-info session "sample_module.add1")]
+      (print (.format "result: {}" result))
+      (assert (= (get result "ns") "tests.ops.sample_module"))
+      (assert (= (get result "name") "sample_module.add1"))
+      (assert (= (get result "doc") "This is docstring"))
+      (assert (= (get result "arglists-str") "(n)"))
+      (assert (in "/HyREPL/tests/ops/sample_module.hy" (get result "file")))
+      (assert (= (get result "line") 6))
+      (assert (= (get result "language") "hylang"))
+      (assert (= (get result "extension") ".hy")))
+
+    ;; class
+    (let [result (get-info session "sample_module.Foo")]
+      (print (.format "result: {}" result))
+      (assert (= (get result "ns") "tests.ops.sample_module"))
+      (assert (= (get result "name") "sample_module.Foo"))
+      (assert (= (get result "doc") "Sample class Foo"))
+      (assert (= (get result "arglists-str") "(x)"))
+      (assert (in "/HyREPL/tests/ops/sample_module.hy" (get result "file")))
+      (assert (= (get result "line") 10))
+      (assert (= (get result "language") "hylang"))
+      (assert (= (get result "extension") ".hy")))))
+
+(defn test-get-info-from-python-module []
+  (let [test-module (types.ModuleType "test_module" "module for testing HyREPL")
+        session (Session test-module)]
+
+    ;; import sample_python_module
+    (setv test-module.sample_python_module tests.ops.sample_python_module)
+
+    ;; module
+    (let [result (get-info session "sample_python_module")]
+      (print (.format "result: {}" result))
+      (assert (= (get result "ns") "tests.ops.sample_python_module"))
+      (assert (= (get result "name") "sample_python_module"))
+      (assert (= (get result "doc") "No doc string"))
+      (assert (is (.get result "arglists-str") None))
+      (assert (in "/HyREPL/tests/ops/sample_python_module.py" (get result "file")))
+      (assert (= (get result "line") 1))
+      (assert (= (get result "language") "python"))
+      (assert (= (get result "extension") ".py")))
+
+    ;; function
+    (let [result (get-info session "sample_python_module.add1_python")]
+      (print (.format "result: {}" result))
+      (assert (= (get result "ns") "tests.ops.sample_python_module"))
+      (assert (= (get result "name") "sample_python_module.add1_python"))
+      (assert (= (get result "doc") "This is docstring"))
+      (assert (= (get result "arglists-str") "(n)"))
+      (assert (in "/HyREPL/tests/ops/sample_python_module.py" (get result "file")))
+      (assert (= (get result "line") 8))
+      (assert (= (get result "language") "python"))
+      (assert (= (get result "extension") ".py")))
+
+    ;; class
+    (let [result (get-info session "sample_python_module.Bar")]
+      (print (.format "result: {}" result))
+      (assert (= (get result "ns") "tests.ops.sample_python_module"))
+      (assert (= (get result "name") "sample_python_module.Bar"))
+      (assert (= (get result "doc") "Sample class Bar"))
+      (assert (= (get result "arglists-str") "(x)"))
+      (assert (in "/HyREPL/tests/ops/sample_python_module.py" (get result "file")))
+      (assert (= (get result "line") 13))
+      (assert (= (get result "language") "python"))
+      (assert (= (get result "extension") ".py")))))
