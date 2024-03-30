@@ -14,3 +14,6 @@
 
   (defn get-x [self]
     self.x))
+
+(defn hello-world []
+  (print "Hello, World!!"))

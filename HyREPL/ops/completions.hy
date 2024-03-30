@@ -6,29 +6,12 @@
 (import
   hy.macros
   hy.compiler
-  hy.completer [Completer]
-  hy.models [Symbol])
+  hy.completer [Completer])
 
 (import toolz [first second])
 
 (import HyREPL.ops.utils [ops])
 (require HyREPL.ops.utils [defop])
-
-(defn make-type [item [override-type None]]
-  (let [t (type item)]
-    (cond
-      (and (is-not override-type None)
-           (= t (. make-type __class__)))
-      override-type
-
-      (= t (. dir __class__))
-      "function"
-
-      (= t dict)
-      "namespace"
-
-      :else
-      (. t __name__))))
 
 (defn snake-to-kebab [s]
   (cond (= (len s) 0)
@@ -40,6 +23,12 @@
         :else
         (.replace s "_" "-")))
 
+(defn kebab-to-snake [s]
+  (cond (= (len s) 0)
+        ""
+        :else
+        (.replace s "-" "_")))
+
 (defn object-type [obj]
   (cond (inspect.isfunction obj) "function"
         (inspect.ismodule obj) "module"
@@ -48,42 +37,37 @@
         (inspect.isbuiltin obj) "builtin"
         :else "other"))
 
+(defn split-by-last-dot [text]
+  (let [matches (re.match r"(\S+(\.[\w-]+)*)\.([\w-]*)$" text)]
+    (.group matches 1 3)))
+
 (defclass TypedCompleter [hy.completer.Completer]
   (defn attr-matches [self text]
-    (setv m (re.match r"(\S+(\.[\w-]+)*)\.([\w-]*)$" text))
-    (print "m: " m)
-    (print "namespace: " (. self namespace))
-    (print (dir (. self namespace)))
     (try
-      (let [groups (.group m 1 3)
-            expr (snake-to-kebab (first groups))
-            attr-prefix (snake-to-kebab (second groups))]
+      (let [[expr attr-prefix] (split-by-last-dot text)
+            obj (eval expr (. self namespace))
+            words (dir obj)
+            n (len attr-prefix)
+            matches []]
 
-        (print "groups => " groups)
-        (print "expr => " expr)
-        (print "attr-prefix => " attr-prefix)
+        ;; (print "expr => " expr)
+        ;; (print "attr-prefix => " attr-prefix)
+        ;; (print "obj => " obj)
+        ;; (print "words => " words)
+        ;; (print "n => " n)
+        ;; (print "matches => " matches)
 
-        (let [obj (eval (Symbol expr) (. self namespace))
-              words (dir obj)
-              n (len attr-prefix)
-              matches []]
-
-          (print "obj => " obj)
-          (print "words => " words)
-          (print "n => " n)
-          (print "matches => " matches)
-          
-          (for [w words]
-            (when (= (cut w 0 n) attr-prefix)
-              (setv attr (getattr obj w))
-              (setv attr-type (object-type attr))
-              (.append matches
-                       {"candidate" (.format "{}.{}" expr
-                                             (if (= attr-type "module")
-                                                 w
-                                                 (snake-to-kebab w)))
-                        "type" attr-type})))
-          matches))
+        (for [w words]
+          (when (= (cut w 0 n) (kebab-to-snake attr-prefix))
+            (setv attr (getattr obj w))
+            (setv attr-type (object-type attr))
+            (.append matches
+                     {"candidate" (.format "{}.{}" expr
+                                           (if (= attr-type "module")
+                                               w
+                                               (snake-to-kebab w)))
+                      "type" attr-type})))
+        matches)
       (except [e Exception]
         (print "Error in completions => " e)
         [])))
