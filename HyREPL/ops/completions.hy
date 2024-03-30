@@ -27,7 +27,7 @@
       (= t dict)
       "namespace"
 
-      True
+      :else
       (. t __name__))))
 
 (defn snake-to-kebab [s]
@@ -37,7 +37,7 @@
         (= (get s 0) "_")
         s
 
-        True
+        :else
         (.replace s "_" "-")))
 
 (defn object-type [obj]
@@ -46,7 +46,7 @@
         (inspect.isclass obj) "class"
         (inspect.ismethod obj) "method"
         (inspect.isbuiltin obj) "builtin"
-        True "other"))
+        :else "other"))
 
 (defclass TypedCompleter [hy.completer.Completer]
   (defn attr-matches [self text]

@@ -1,3 +1,4 @@
+(import logging)
 (import toolz [first second])
 (import hyrule [inc])
 (require hyrule [assoc])
@@ -18,6 +19,7 @@
 (defn decode [thing]
   "Decodes `thing` and returns the first parsed bencode value encountered
 as well as the unparsed rest"
+  (logging.debug "bencode.decode: thing= %s" thing)
   (cond (.startswith thing #b"d")
         (decode-dict (cut thing 1 None))
 

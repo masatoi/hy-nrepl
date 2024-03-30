@@ -13,7 +13,7 @@ Fireplace
 
 Experimental!
 =============
-HyREPL requires Python3 and Hy over 0.2.7. It is still a work in progress, but it
+HyREPL requires Python 3.10 and Hy over 0.2.8. It is still a work in progress, but it
 is suitable for daily usage :)
 
 To install, run
@@ -24,8 +24,7 @@ or get it from pypi
 
     pip install git+https://github.com/masatoi/HyREPL.git
 
-To run the tests, simply execute `nosetests-3.4 -v`. The tests create (and bind
-to) a UNIX domain socket at `/tmp/HyREPL-test`.
+To run the tests, simply execute `pytest tests`.
 
 Confirmed working nREPL clients
 -------------------------------
