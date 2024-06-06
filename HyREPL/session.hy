@@ -4,7 +4,8 @@
         threading [Lock])
 (import HyREPL.bencode [encode])
 (import HyREPL.ops.utils [find-op])
-(require hyrule [assoc unless])
+(import hyrule [assoc])
+(require hyrule [unless])
 (import hy.repl)
 
 (setv sessions {})

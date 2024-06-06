@@ -1,7 +1,6 @@
 (import logging)
 (import toolz [first second])
-(import hyrule [inc])
-(require hyrule [assoc])
+(import hyrule [inc assoc])
 
 (defreader b
   (setv expr (.parse-one-form &reader))

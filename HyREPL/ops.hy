@@ -5,12 +5,12 @@
 (import sys
         logging)
 (import hy.models)
-(require hyrule [unless defmacro/g!])
+(require hyrule [unless defmacro!])
 (import toolz [first second nth])
 
 (setv ops {})
 
-(defmacro/g! defop [name args desc #* body]
+(defmacro! defop [name args desc #* body]
   (unless (or (isinstance name hy.models.String)
               (isinstance name hy.models.Symbol))
     (raise (TypeError "Name must be a symbol or a string.")))

@@ -10,10 +10,10 @@
         hy.reader.exceptions [LexException]
         hy.core.hy-repr [hy-repr]
         toolz [first second last]
+        hyrule [assoc]
         HyREPL.ops.utils [ops find-op])
 
-(require hyrule [assoc]
-         HyREPL.ops.utils [defop])
+(require HyREPL.ops.utils [defop])
 
 (defclass HyReplSTDIN [Queue]
   ;; """This is hack to override sys.stdin."""
