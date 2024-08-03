@@ -100,7 +100,7 @@
                "ns" "The namespace in which we want to obtain completion candidates. Defaults to *ns*."
                "options" "A map of options supported by the completion function. Supported keys: extra-metadata (possible values: :arglists, :docs)"}
    "returns" {"completions" "A list of possible completions"}}
-  (print "Complete: " msg :file sys.stderr)
+  ;; (print "Complete: " msg :file sys.stderr)
   (.write session {"id" (.get msg "id")
                    "completions" (get-completions session (.get msg "prefix"))
                    "status" ["done"]}
