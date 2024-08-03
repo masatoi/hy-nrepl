@@ -20,7 +20,7 @@
   (if (contain-dot? sym)
       (let [parts (split-string-by-first-dot sym)
             result (eval (Symbol (mangle (get parts 0))) (. m __dict__))]
-        (logging.debug "%resolve-symbol: parts= %s, result= %s" parts result)
+        (logging.debug "%%resolve-symbol: parts= %s, result= %s" parts result)
         (if (inspect.ismodule result)
             (%resolve-symbol result (get parts 1))
             (eval (mangle sym) (. m __dict__))))
@@ -33,7 +33,10 @@
       (try
         (get _hy_macros (mangle sym))
         (except [e KeyError]
-          None)))))
+          None)))
+    (except [e SyntaxError] None)
+    (except [e ValueError] None)
+    (except [e AssertionError] None)))
 
 (defn find-pattern [pattern file]
   (with [f (open file 'r)]

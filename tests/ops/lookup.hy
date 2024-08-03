@@ -45,7 +45,35 @@
       (assert (in "/HyREPL/tests/ops/sample_module.hy" (get result "file")))
       (assert (= (get result "line") 10))
       (assert (= (get result "language") "hylang"))
-      (assert (= (get result "extension") ".hy")))))
+      (assert (= (get result "extension") ".hy")))
+
+    ;; error cases
+
+    ;; SyntaxError: case of reserved words are included
+    (let [result (get-info session "sample_module.in")]
+      (print (.format "result: {}" result))
+      (assert (= result {})))
+
+    ;; AssertionError
+    (let [result (get-info session "sample_module.")]
+      (print (.format "result: {}" result))
+      (assert (= result {})))
+
+    (let [result (get-info session ".Foo")]
+      (print (.format "result: {}" result))
+      (assert (= result {})))
+
+    (let [result (get-info session ".")]
+      (print (.format "result: {}" result))
+      (assert (= result {})))
+
+    (let [result (get-info session "from.Foo")]
+      (print (.format "result: {}" result))
+      (assert (= result {})))
+
+    (let [result (get-info session "")]
+      (print (.format "result: {}" result))
+      (assert (= result {})))))
 
 (defn test-get-info-from-python-module []
   (let [test-module (types.ModuleType "test_module" "module for testing HyREPL")
