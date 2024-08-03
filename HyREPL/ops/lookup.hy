@@ -87,10 +87,8 @@
         doc (inspect.getdoc symbol)
         sig (and (callable symbol) (inspect.signature symbol))
         result {}]
-    (logging.debug "get-info: Got object %s for symbol %s" symbol symbol-name)
-    (print (.format "symbol-name: {}" symbol-name))
-    (print (.format "symbol: {}" symbol))
-    (print (.format "session.module: {}" session.module))
+    (logging.debug "get-info: Got object %s for symbol %s, session.module: %s"
+                   symbol symbol-name session.module)
     (when (is-not symbol None)
       (.update result
                {"doc" (or doc "No doc string")
