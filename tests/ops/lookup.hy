@@ -73,7 +73,14 @@
 
     (let [result (get-info session "")]
       (print (.format "result: {}" result))
-      (assert (= result {})))))
+      (assert (= result {})))
+
+    ;; No sigunature case
+    (let [result (get-info session "set")]
+      (print (.format "result: {}" result))
+      (assert (= (get result "name") "set"))
+      (assert (get result "doc")))
+    ))
 
 (defn test-get-info-from-python-module []
   (let [test-module (types.ModuleType "test_module" "module for testing HyREPL")

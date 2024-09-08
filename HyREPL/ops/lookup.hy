@@ -85,7 +85,10 @@
 (defn get-info [session symbol-name]
   (let [symbol (resolve-symbol session.module symbol-name)
         doc (inspect.getdoc symbol)
-        sig (and (callable symbol) (inspect.signature symbol))
+        sig (try
+              (and (callable symbol) (inspect.signature symbol))
+              (except [e ValueError]
+                None))
         result {}]
     (logging.debug "get-info: Got object %s for symbol %s, session.module: %s"
                    symbol symbol-name session.module)
