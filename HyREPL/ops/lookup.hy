@@ -36,7 +36,8 @@
           None)))
     (except [e SyntaxError] None)
     (except [e ValueError] None)
-    (except [e AssertionError] None)))
+    (except [e AssertionError] None)
+    (except [e AttributeError] None)))
 
 (defn find-pattern [pattern file]
   (with [f (open file 'r)]

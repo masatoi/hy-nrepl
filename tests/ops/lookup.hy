@@ -80,7 +80,11 @@
       (print (.format "result: {}" result))
       (assert (= (get result "name") "set"))
       (assert (get result "doc")))
-    ))
+
+    ;; No attribute case
+    (let [result (get-info session "sample_module.Foo.y")]
+      (print (.format "result: {}" result))
+      (assert (= result {})))))
 
 (defn test-get-info-from-python-module []
   (let [test-module (types.ModuleType "test_module" "module for testing HyREPL")
