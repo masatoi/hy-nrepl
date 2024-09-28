@@ -51,7 +51,7 @@
         (self.session.handle (get m 0) self.request))
       (print "Client gone" :file sys.stderr))))
 
-(defn start-server [[ip "127.0.0.1"] [port 1337]]
+(defn start-server [[ip "127.0.0.1"] [port 7888]]
   (let [s (ReplServer #(ip port) ReplRequestHandler)
         t (threading.Thread :target s.serve-forever)]
     (setv t.daemon True)
@@ -73,8 +73,8 @@
             (try
               (int (last args))
               (except [_ ValueError]
-                1337))
-            1337))
+                7888))
+            7888))
   (while True
     (try
        (start-server "127.0.0.1" port)

@@ -1,6 +1,6 @@
 ;; ReplRequestHandler
 
-(setv server1 (ReplServer #("127.0.0.1" 1337) ReplRequestHandler))
+(setv server1 (ReplServer #("127.0.0.1" 7888) ReplRequestHandler))
 
 ;; ~/hy/HyREPL/tests/tests.hy
 

@@ -126,7 +126,7 @@
   (.write session 
           {"encoding" "edn"
            "data" (+ "{:remote true, :client-id "
-                     (str  (get msg "id")) ", :name \"localhost:1337\", "
+                     (str  (get msg "id")) ", :name \"localhost:7888\", "
                      ":dir \"/somehing/something/something/workaroundl\", :type \"lein-light-nrepl\", "
                      ":commands [:editor.eval.clj :editor.clj.doc :editor.cljs.doc "
                      ":editor.clj.hints :editor.cljs.hints :docs.clj.search "

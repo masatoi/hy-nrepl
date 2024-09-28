@@ -26,7 +26,7 @@
     (setv self.o sys.stderr)
 
     ;; Start server
-    (setv self.s (ReplTestServer #("127.0.0.1" 1337) ReplRequestHandler))
+    (setv self.s (ReplTestServer #("127.0.0.1" 7888) ReplRequestHandler))
     (setv self.t (threading.Thread :target (. self s serve-forever)))
     (setv (. self t daemon) True)
 
@@ -54,7 +54,7 @@
   ;; (print (.format "DEBUG[soc-send] message: {}" message) :flush True)
   (let [s (socket.socket :family socket.AF-INET)
         r []]
-    (.connect s #("127.0.0.1" 1337))
+    (.connect s #("127.0.0.1" 7888))
     ;; (print (.format "DEBUG[soc-send] after connect, s: {}" s)  :flush True)
     (.sendall s (encode message))
     ;; (print (.format "DEBUG[soc-send] after sendall, message: {}" (encode message))  :flush True) ; debug 
