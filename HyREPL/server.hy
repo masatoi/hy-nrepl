@@ -42,13 +42,21 @@
             (print e :file sys.stderr)
             (continue)))
 
+        (setv req (get m 0))
+        (setv sid (.get req "session"))
+
         ;; Create session if not exist
         (when (is self.session None)
-          (setv self.session (.get sessions (.get (get m 0) "session")))
+          (setv self.session (.get sessions sid))
           (when (is self.session None)
+            (logging.debug "session not found and created: finding session id=%s" sid)
             (setv self.session (Session))))
 
-        (self.session.handle (get m 0) self.request))
+        ;; Switch requested session
+        (when (and sid (not (= self.session.uuid sid)))
+          (setv self.session (.get sessions sid)))
+
+        (self.session.handle req self.request))
       (print "Client gone" :file sys.stderr))))
 
 (defn start-server [[ip "127.0.0.1"] [port 7888]]
