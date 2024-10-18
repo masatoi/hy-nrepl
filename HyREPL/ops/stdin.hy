@@ -10,5 +10,6 @@
    "optional" {}
    "returns" {"status" "\"need-input\" if more input is needed"}}
   (logging.debug "id=%s" (.get msg "id"))
+  (setv session.stdin-id (.get msg "id"))
   (.put sys.stdin (get msg "stdin"))
   (.task-done sys.stdin))

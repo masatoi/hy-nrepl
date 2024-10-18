@@ -138,8 +138,12 @@
           (InterruptibleEval msg session
             ;; writer
             (fn [message]
-              (logging.debug "InterruptibleEval writer: message=%s" message)
-              (assoc message "id" (.get msg "id"))
+              (logging.debug "InterruptibleEval writer: message=%s, stdin-id=%s" message session.stdin-id)
+              (if session.stdin-id
+                  (do
+                    (assoc message "id" session.stdin-id)
+                    (setv session.stdin-id None))
+                  (assoc message "id" (.get msg "id")))
               (.write session message transport))))
     (.start session.repl)))
 
@@ -153,7 +157,7 @@
                           "\"interrupt-id-mismatch\" if the session is"
                           " currently evaluating code with a different ID"
                           " than the" "specified \"interrupt-id\" value")}}
-  (.write session {"id" (.get msg "id")
+  (.write session {"id" (.get msg "interrupt-id")
                    "status"
                    (with [session.lock]
                      (cond

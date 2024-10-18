@@ -13,6 +13,7 @@
 (defclass Session [object]
   (setv status "")
   (setv eval-id "")
+  (setv stdin-id None)
   (setv repl None)
   (setv last-traceback None)
   (setv module None)
