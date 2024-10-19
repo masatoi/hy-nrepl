@@ -9,6 +9,7 @@
         hy.reader [HyReader]
         hy.reader.exceptions [LexException]
         hy.core.hy-repr [hy-repr]
+        hy.errors [hy-exc-filter]
         toolz [first second last]
         hyrule [assoc]
         HyREPL.ops.utils [ops find-op])
@@ -101,20 +102,17 @@
     (let [exc-type (first trace)
           exc-value (second trace)
           exc-traceback (get trace 2)]
-      (logging.debug "InterruptibleEval.format-excp : trace=%s" trace)
       (setv self.session.last-traceback exc-traceback)
-      (traceback.print_tb exc-traceback)
       (self.writer {"status" ["eval-error"]
                     "ex" (. exc-type __name__)
                     "root-ex" (. exc-type __name__)
                     "id" (.get self.msg "id")})
-      (logging.debug "InterruptibleEval.format-excp : dir=%s" (dir exc-value))
       (when (isinstance exc-value LexException)
         (logging.debug "InterruptibleEval.format-excp : text=%s, msg=%s" exc-value.text exc-value.msg)
         (when (is exc-value.text None)
           (setv exc-value.text ""))
         (setv exc-value (.format "LexException: {}" exc-value.msg)))
-      (self.writer {"err" (+ (.strip (str exc-value)) "\n")}))))
+      (self.writer {"err" (hy-exc-filter #* trace)}))))
 
 (defop "eval" [session msg transport]
   {"doc" "Evaluates code."
