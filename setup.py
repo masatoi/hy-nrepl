@@ -3,8 +3,8 @@
 from setuptools import find_packages, setup
 
 setup(name="HyREPL",
-      version="0.2.3",
-      install_requires=['hy==0.29.0', 'hyrule==0.6.0', 'toolz'],
+      version="0.2.4",
+      install_requires=['hy>=0.29.0', 'hyrule>=0.6.0', 'toolz'],
       python_requires='>=3.10',
       dependency_links=[
           'https://github.com/hylang/hy/archive/master.zip#egg=hy-0.29.0',
