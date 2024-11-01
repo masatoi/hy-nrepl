@@ -29,6 +29,33 @@
              "ns" "Hy"}
             {"status" ["done"]}]))
 
+(defn test-multi-expression-eval []
+  (testing ";; this is comment\n(print \"Hello, world!\")"
+           [{"out" "Hello, world!\n"}
+            {"value" "None"
+             "ns" "Hy"}
+            {"status" ["done"]}]))
+
+(defn test-multi-expression-eval2 []
+  (testing ";; this is comment
+(setv arr [])
+(arr.append 1)
+arr"
+           [{"value" "[1]"
+             "ns" "Hy"}
+            {"status" ["done"]}]))
+
+(defn test-multi-output []
+  (testing ";; this is comment
+(print 1)
+(print 2)
+(print 3)
+4"
+           [{"out" "1\n2\n3\n"}
+            {"value" "4"
+             "ns" "Hy"}
+            {"status" ["done"]}]))
+
 (defn test-eval-with-exception []
   (setv msg {"code" "(/ 1 0)"
              "id" (str (uuid4))})

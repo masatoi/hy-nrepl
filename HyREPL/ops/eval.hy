@@ -66,7 +66,13 @@
 
   (defn tokenize [self code]
     (setv gen (self.reader.parse (StringIO code)))
-    (gen.__next__))
+    (setv exprs (lfor expr gen expr))
+    (if (= (len exprs) 1)
+        (get exprs 0)
+        ;; When the input contains multiple expressions, implicitly wrap them in a do macro
+        (do
+          (exprs.insert 0 'do)
+          (hy.models.Expression exprs))))
 
   (defn run [self]
     (let [code (get self.msg "code")
@@ -91,7 +97,7 @@
                 (setv sys.stdout oldout)
                 (.format-excp self (sys.exc-info)))
               (else
-                (when (and (= (.getvalue p) "None") (bool (.getvalue sys.stdout)))
+                (when (bool (.getvalue sys.stdout))
                   (self.writer {"out" (.getvalue sys.stdout)}))
                 (self.writer {"value" (.getvalue p)
                               "ns" (.get self.msg "ns" "Hy")}))))
