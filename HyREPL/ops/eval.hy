@@ -90,9 +90,9 @@
                 (setv sys.stdout (StringIO))
                 (logging.debug "InterruptibleEval.run: msg=%s, expr=%s"
                                self.msg (hy-repr self.expr))
-                (.write p (str (hy.eval self.expr
-                                        :locals self.session.locals
-                                        :module self.session.module))))
+                (.write p (str (hy-repr (hy.eval self.expr
+                                                 :locals self.session.locals
+                                                 :module self.session.module)))))
               (except [e Exception]
                 (setv sys.stdout oldout)
                 (.format-excp self (sys.exc-info)))
