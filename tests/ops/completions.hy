@@ -70,4 +70,12 @@
   (assert (= (lfor d result :if (= (.get d "candidate") "foo.get-x") d)
              [{"candidate" "foo.get-x" "type" "method"}]))
   (assert (= (lfor d result :if (= (.get d "candidate") "foo.x") d)
-             [{"candidate" "foo.x" "type" "other"}])))
+             [{"candidate" "foo.x" "type" "other"}]))
+
+  (eval-and-run "(setv foo-bar (tests.ops.sample_module.Foo 20))")
+
+  (setv result (get-completions session "foo-bar."))
+  (assert (= (lfor d result :if (= (.get d "candidate") "foo-bar.get-x") d)
+             [{"candidate" "foo-bar.get-x" "type" "method"}]))
+  (assert (= (lfor d result :if (= (.get d "candidate") "foo-bar.x") d)
+             [{"candidate" "foo-bar.x" "type" "other"}])))

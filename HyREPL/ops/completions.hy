@@ -9,7 +9,7 @@
   hy.completer [Completer])
 
 (import toolz [first second])
-
+(import hy.reader.mangling [mangle unmangle])
 (import HyREPL.ops.utils [ops])
 (require HyREPL.ops.utils [defop])
 
@@ -21,13 +21,12 @@
         s
 
         :else
-        (.replace s "_" "-")))
+        (unmangle s)))
 
 (defn kebab-to-snake [s]
-  (cond (= (len s) 0)
-        ""
-        :else
-        (.replace s "-" "_")))
+  (if (= (len s) 0)
+      ""
+      (mangle s)))
 
 (defn object-type [obj]
   (cond (inspect.isfunction obj) "function"
@@ -45,18 +44,10 @@
   (defn attr-matches [self text]
     (try
       (let [[expr attr-prefix] (split-by-last-dot text)
-            obj (eval expr (. self namespace))
+            obj (eval (kebab-to-snake expr) (. self namespace))
             words (dir obj)
             n (len attr-prefix)
             matches []]
-
-        ;; (print "expr => " expr)
-        ;; (print "attr-prefix => " attr-prefix)
-        ;; (print "obj => " obj)
-        ;; (print "words => " words)
-        ;; (print "n => " n)
-        ;; (print "matches => " matches)
-
         (for [w words]
           (when (= (cut w 0 n) (kebab-to-snake attr-prefix))
             (setv attr (getattr obj w))

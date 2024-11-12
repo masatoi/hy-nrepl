@@ -28,7 +28,9 @@
 
 (defn resolve-symbol [m sym]
   (try
+    ;; Find from variables or functions
     (%resolve-symbol m sym)
+    ;; If not found, then find from macros
     (except [e NameError]
       (try
         (get _hy_macros (mangle sym))
