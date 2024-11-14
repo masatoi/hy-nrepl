@@ -50,17 +50,20 @@
             matches []]
         (for [w words]
           (when (= (cut w 0 n) (kebab-to-snake attr-prefix))
-            (setv attr (getattr obj w))
-            (setv attr-type (object-type attr))
-            (.append matches
-                     {"candidate" (.format "{}.{}" expr
-                                           (if (= attr-type "module")
-                                               w
-                                               (snake-to-kebab w)))
-                      "type" attr-type})))
+            (try
+              (setv attr (getattr obj w))
+              (setv attr-type (object-type attr))
+              (.append matches
+                       {"candidate" (.format "{}.{}" expr
+                                             (if (= attr-type "module")
+                                                 w
+                                                 (snake-to-kebab w)))
+                        "type" attr-type})
+              (except [e Exception]
+                (print "Attribute error:" e)))))
         matches)
       (except [e Exception]
-        (print "Error in completions => " e)
+        (print "Error in completions:" e)
         [])))
 
   (defn global-matches [self text]
