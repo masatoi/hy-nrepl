@@ -114,7 +114,7 @@
                     "root-ex" (. exc-type __name__)
                     "id" (.get self.msg "id")})
       (when (isinstance exc-value LexException)
-        (logging.debug "InterruptibleEval.format-excp : text=%s, msg=%s" exc-value.text exc-value.msg)
+        (logging.debug "InterruptibleEval.format-excp : text=`%s`, msg=%s" exc-value.text exc-value.msg)
         (when (is exc-value.text None)
           (setv exc-value.text ""))
         (setv exc-value (.format "LexException: {}" exc-value.msg)))

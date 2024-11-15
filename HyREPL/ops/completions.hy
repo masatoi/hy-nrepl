@@ -1,7 +1,7 @@
 ;; Inspired by
 ;; https://github.com/clojure-emacs/cider-nrepl/blob/master/src/cider/nrepl/middleware/complete.clj
 
-(import sys re inspect)
+(import sys re inspect logging)
 
 (import
   hy.macros
@@ -60,10 +60,10 @@
                                                  (snake-to-kebab w)))
                         "type" attr-type})
               (except [e Exception]
-                (print "Attribute error:" e)))))
+                (logging.error "Attribute error. text=`%s`, error=%s" text e)))))
         matches)
       (except [e Exception]
-        (print "Error in completions:" e)
+        (logging.error "Error in completions. text=`%s`, error=%s" text e)
         [])))
 
   (defn global-matches [self text]
