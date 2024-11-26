@@ -1,8 +1,8 @@
 from pathlib import Path
-
-import hy, pytest
+import pytest
 
 NATIVE_TESTS = Path.cwd() / "tests"
+
 
 def pytest_collect_file(file_path, parent):
     if (file_path.suffix == ".hy" and NATIVE_TESTS in file_path.parents
