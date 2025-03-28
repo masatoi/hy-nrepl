@@ -93,14 +93,8 @@ of exceptions if you try to encode weird things. Don't do that."
 (defn encode-int [thing]
   #b(.format "i{}e" thing))
 
-;; (defn encode-str [thing]
-;;   #b(.format "{}:{}" (len #b thing) thing))
-
 (defn encode-str [thing]
-  "Encodes a string `thing` as UTF-8 bytes."
-  (let [encoded-bytes (.encode thing "utf-8")]
-    (let [len-bytes (.encode (str (len encoded-bytes)) "utf-8")]
-      (+ len-bytes #b":" encoded-bytes))))
+  #b(.format "{}:{}" (len #b thing) thing))
 
 (defn encode-bytes [thing]
   #b(.format "{}:{}" (len thing) (.decode thing "utf-8")))
