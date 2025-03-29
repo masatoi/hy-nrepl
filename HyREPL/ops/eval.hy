@@ -161,20 +161,23 @@
                           "\"interrupt-id-mismatch\" if the session is"
                           " currently evaluating code with a different ID"
                           " than the" "specified \"interrupt-id\" value")}}
-  (.write session {"id" (.get msg "interrupt-id")
-                   "status"
-                   (with [session.lock]
-                     (cond
-                       (or (is session.repl None) (not (.is-alive session.repl)))
-                       "session-idle"
-                       (!= session.eval-id (.get msg "interrupt-id"))
-                       "interrupt-id-mismatch"
-                       True
-                       (do
-                         (.terminate session.repl)
-                         (.join session.repl)
-                         (logging.debug "interrupt: interrupted")
-                         "interrupted")))}
+  (.write session
+          {"id" (.get msg "interrupt-id")
+           "status" (with [session.lock]
+                      ["done"
+                       (cond
+                         (or (is session.repl None) (not (.is-alive session.repl)))
+                         "session-idle"
+
+                         (!= session.eval-id (.get msg "interrupt-id"))
+                         "interrupt-id-mismatch"
+
+                         True
+                         (do
+                           (.terminate session.repl)
+                           (.join session.repl)
+                           (logging.debug "interrupt: interrupted")
+                           "interrupted"))])}
           transport)
   (.write session
           {"status" ["done"]
