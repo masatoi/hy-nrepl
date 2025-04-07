@@ -62,11 +62,16 @@
 (defn get-source-details [x]
   "Get line number, source file of x."
   (let [raw-file (inspect.getsourcefile x)
-        path (if raw-file
+        path (if (and raw-file
+                      (isinstance raw-file str)
+                      (> (len raw-file) 0)
+                      ;; Add check to exclude '<...>' style names
+                      (not (and (.startswith raw-file "<")
+                                (.endswith raw-file ">"))))
                  (Path raw-file)
                  (return {}))
-        uri (.as_uri path)
-        file (if (and (.startswith uri "file:///") (.is_absolute path))
+        uri (.as_uri (.resolve path)) ; Ensure absolute path
+        file (if (.startswith uri "file:///")
                  (.replace uri "file:///" "file:/" 1) ; Substitution only the first time
                  uri)
         module (if (inspect.ismodule x)
