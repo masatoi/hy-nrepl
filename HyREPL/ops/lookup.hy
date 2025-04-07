@@ -1,4 +1,5 @@
 (import sys inspect logging re)
+(import pathlib [Path])
 (import hy.models [Symbol])
 (import hy.reader.mangling [mangle])
 (import HyREPL.ops.utils [ops])
@@ -41,17 +42,17 @@
     (except [e AssertionError] None)
     (except [e AttributeError] None)))
 
-(defn find-pattern [pattern file]
-  (with [f (open file 'r)]
+(defn find-pattern [pattern file-path]
+  (with [f (open file-path 'r)]
     (for [[i line] (enumerate (f.readlines) :start 1)]
       (when (re.search pattern line)
         (return i)))
     None))
 
-(defn find-class-definition [obj file [lang "hylang"]]
+(defn find-class-definition [obj file-path [lang "hylang"]]
   (cond (= lang "hylang")
         (let [pattern r"^\s*\(\s*defclass\s+{}"]
-          (find-pattern (.format pattern obj.__name__) file))
+          (find-pattern (.format pattern obj.__name__) file-path))
 
         (= lang "python")
         (second (inspect.getsourcelines obj))
@@ -60,9 +61,17 @@
 
 (defn get-source-details [x]
   "Get line number, source file of x."
-  (let [file (inspect.getsourcefile x)
-        module (cond (inspect.ismodule x) x.__name__
-                     :else x.__module__)
+  (let [raw-file (inspect.getsourcefile x)
+        path (if raw-file
+                 (Path raw-file)
+                 (return {}))
+        uri (.as_uri path)
+        file (if (and (.startswith uri "file:///") (.is_absolute path))
+                 (.replace uri "file:///" "file:/" 1) ; Substitution only the first time
+                 uri)
+        module (if (inspect.ismodule x)
+                   x.__name__
+                   x.__module__)
         ext (cut file -3 None)
         lang (match ext
                     ".py" "python"
@@ -75,8 +84,9 @@
 
                ;; class
                (inspect.isclass x)
-               (find-class-definition x file :lang lang)
+               (find-class-definition x path :lang lang)
 
+               ;; other
                :else
                1)]
     {"line" lnum
