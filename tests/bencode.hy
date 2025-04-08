@@ -2,7 +2,6 @@
 (import toolz [first second])
 (import HyREPL.bencode [encode decode decode-multiple])
 (import pytest)
-(import bencodepy)
 
 (require hyrule [->])
 
