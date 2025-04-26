@@ -42,6 +42,7 @@
             (print e :file sys.stderr)
             (continue)))
 
+        (logging.debug "message=%s" m)
         (setv req (get m 0))
         (setv sid (.get req "session"))
 
@@ -67,9 +68,23 @@
     #(t s)))
 
 (defmain [#* args]
-  ;; settings for logging
+
+  ;; Show usage
+  (when (or (in "-h" args)
+            (in "--help" args))
+    (print "Usage:
+  hyrepl [-d | --debug] [-h | --help] [<port>]
+
+Options:
+  -h, --help      Show this usage
+  -d, --debug     Debug mode (true/false) [default: false]
+  <port>          Port number [default: 7888]")
+    (return 0))
+
+  ;; Settings for logging
   (logging.basicConfig
-    :level (if (in "--debug" args)
+    :level (if (or (in "-d" args)
+                   (in "--debug" args))
                logging.DEBUG
                logging.WARNING)
     :format "%(levelname)s:%(module)s: %(message)s (at %(filename)s:%(lineno)d in %(funcName)s)")
