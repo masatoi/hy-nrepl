@@ -1,37 +1,57 @@
-HyREPL
-======
+# HyREPL
 [![HyREPL unit test](https://github.com/masatoi/HyREPL/actions/workflows/hyrepl_test.yaml/badge.svg)](https://github.com/masatoi/HyREPL/actions/workflows/hyrepl_test.yaml)
 
-HyREPL is an implementation of the [nREPL](https://nrepl.org)
-protocol for [Hy](https://github.com/hylang/hy).
+HyREPL is an implementation of the [nREPL](https://nrepl.org) protocol for [Hy](https://github.com/hylang/hy).
 
-Lighttable  
-[![lighttable](https://i.imgur.com/Yt8KRAq.gif)](https://i.imgur.com/Yt8KRAq.gif)
+## Implemented Operations
 
-Fireplace  
-[![fireplace](https://i.imgur.com/uWTEPoc.gif)](https://i.imgur.com/Yt8KRAq.gif)
+from [nREPL Built-in Ops](https://nrepl.org/nrepl/1.3/ops.html)
 
-Experimental!
-=============
-HyREPL requires Python 3.10 and Hy over 0.2.8. It is still a work in progress, but it
-is suitable for daily usage :)
+- [ ] add-middleware
+- [x] clone
+- [x] close
+- [x] completions
+- [x] describe
+- [x] eval
+- [x] interrupt
+- [x] load-file
+- [x] lookup
+- [ ] ls-middleware
+- [x] ls-sessions
+- [x] stdin
+- [ ] swap-middleware
 
-To install, run
+## Usage
+HyREPL requires Python 3.10 and Hy over 0.2.9.
 
-    python setup.py install
+To install
 
-or get it from pypi
+```sh
+pip install git+https://github.com/masatoi/HyREPL.git
+```
 
-    pip install git+https://github.com/masatoi/HyREPL.git
+To run server, (default port is 7888)
+```sh
+hyrepl
 
-To run the tests, simply execute `pytest tests`.
+# Output debug log and specify port
+hyrepl --debug 7888
+```
 
-Confirmed working nREPL clients
--------------------------------
+To run the tests, simply execute `pytest tests` in project root directory.
 
-This list is not exhaustive, and HyREPL does not support all features offered by
-these clients, such as advanced debugger integration, profiling or tracing. Jump
-to source is also not supported.
+## Confirmed working nREPL clients
+
+### Emacs
+The following combinations are currently confirmed to work stably.
+
+- [hy-mode](https://github.com/hylang/hy-mode) + [Rail](https://github.com/masatoi/Rail)
+  - REPL (Eval and Interruption)
+  - Symbol completion
+  - Eldoc (Function arg documentations)
+  - Jump to source
+
+This list is not exhaustive, and HyREPL does not support all features offered by these clients, such as advanced debugger integration, profiling or tracing. Jump to source is also not supported.
 
 ### Lighttable
 * Support live eval by connecting with `Clojure nrepl`. Still basic and buggy 

@@ -1,4 +1,4 @@
-name: HyREPL unit test
+name: HyREPL tests
 
 on:
   push:
