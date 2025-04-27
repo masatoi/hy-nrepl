@@ -222,4 +222,26 @@
                    session2))
         (assert (= (get response5 "value") "6"))
         (assert (= (len (get response6 "status")) 1))
-        (assert (= (get (get response6 "status") 0) "done"))))))
+        (assert (= (get (get response6 "status") 0) "done"))))
+
+    ;; List Sessions
+    (nrepl-client.send "ls-sessions" :params {})
+    (let [response7 (nrepl-client.receive)]
+      (print "ls-sessions response:" response7)
+      (print "left:" (set (get response7 "sessions")))
+      (print "session1:" session1)
+      (print "session2:" session2)
+      (print "ls-sessions-session:" (get response7 "session"))
+      (assert (.issubset #{session1 session2}
+                         (set (get response7 "sessions"))))
+      (assert (= (len (get response7 "status")) 1))
+      (assert (= (get (get response7 "status") 0) "done")))
+
+    ;; Close session
+    (nrepl-client.send "close" :params {"session" session1})
+    (let [res (nrepl-client.receive)]
+      (print "close response:" res)
+      (nrepl-client.send "ls-sessions" :params {})
+      (let [res (nrepl-client.receive)]
+        (print "ls-sessions response:" res)
+        (assert (not (in session1 (get res "sessions"))))))))
