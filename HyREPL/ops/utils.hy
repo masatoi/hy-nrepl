@@ -19,18 +19,18 @@
     (raise (TypeError "Description must be a dictionary.")))
   (setv fn-checked
         `(fn [~@args]
-           (setv g!failed False)
-           (for [g!r (.keys (.get ~desc "requires" {}))]
-             (if (in g!r (second ~args))
+           (setv ~g!failed False)
+           (for [~g!r (.keys (.get ~desc "requires" {}))]
+             (if (in ~g!r (second ~args))
                  None
                  (do
                    (.write (first ~args)
                            {"status" ["done"]
                             "id" (.get (second ~args) "id")
-                            "missing" (str g!r)} (nth 2 ~args))
-                   (setv g!failed True)
+                            "missing" (str ~g!r)} (nth 2 ~args))
+                   (setv ~g!failed True)
                    (break))))
-           (if g!failed
+           (if ~g!failed
                None
                (do ~@body))))
   (setv n (str name))
