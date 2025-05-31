@@ -1,0 +1,57 @@
+* TODO <2025-05-31 Sat> Completion order
+In completion, if the order of candidates is in lexicographical order, private methods, etc. that start with `_` will appear at the top.
+We would like to change the order and move them to the end.
+
+* TODO <2025-05-31 Sat> Completion when Variable name contain `-`
+No completion if the variable name contains `-` (completion will appear if it is `_`)
+
+* DONE <2025-05-31 Sat> Handle inspect error: OSError: source code not available
+
+#+begin_src
+Exception occurred during processing of request from ('127.0.0.1', 50699)
+Traceback (most recent call last):
+  File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/inspect.py", line 1085, in findsource
+    lnum = vars(object)['__firstlineno__'] - 1
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+KeyError: '__firstlineno__'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/socketserver.py", line 318, in _handle_request_noblock
+    self.process_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/socketserver.py", line 349, in process_request
+    self.finish_request(request, client_address)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/socketserver.py", line 362, in finish_request
+    self.RequestHandlerClass(request, client_address, self)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/socketserver.py", line 761, in __init__
+    self.handle()
+    ~~~~~~~~~~~^^
+  File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/site-packages/HyREPL/server.hy", line 60, in handle
+    (self.session.handle req self.request))
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/site-packages/HyREPL/session.hy", line 49, in handle
+    ((find-op (.get msg "op")) self msg transport)))
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/site-packages/HyREPL/ops/lookup.hy", line 132, in _hy_anon_var_32
+    (let [info (get-info session (.get msg "sym"))]
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/site-packages/HyREPL/ops/lookup.hy", line 120, in get_info
+    (.update result (get-source-details symbol))
+                     ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/site-packages/HyREPL/ops/lookup.hy", line 92, in get_source_details
+    (find-class-definition x path :lang lang)
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/site-packages/HyREPL/ops/lookup.hy", line 58, in find_class_definition
+    (second (inspect.getsourcelines obj))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/inspect.py", line 1238, in getsourcelines
+    lines, lnum = findsource(object)
+                  ~~~~~~~~~~^^^^^^^^
+  File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/inspect.py", line 1087, in findsource
+    raise OSError('source code not available')
+OSError: source code not available
+#+end_src

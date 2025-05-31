@@ -55,7 +55,10 @@
           (find-pattern (.format pattern obj.__name__) file-path))
 
         (= lang "python")
-        (second (inspect.getsourcelines obj))
+        (try
+          (second (inspect.getsourcelines obj))
+          (except [e OSError]
+            None))
 
         :else (raise (ValueError "Unknown lang"))))
 
@@ -89,7 +92,8 @@
 
                ;; class
                (inspect.isclass x)
-               (find-class-definition x path :lang lang)
+               (and (find-class-definition x path :lang lang)
+                    (return {}))
 
                ;; other
                :else
