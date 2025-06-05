@@ -78,7 +78,7 @@
       (print (.format "result: {}" result))
       (assert (= result {})))
 
-    ;; No sigunature case
+    ;; No signature case
     (let [result (get-info session "set")]
       (print (.format "result: {}" result))
       (assert (= (get result "name") "set"))
