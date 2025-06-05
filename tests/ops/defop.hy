@@ -70,7 +70,7 @@
                    (except [e hy.errors.HyMacroExpansionError])
                    (else
                      (assert False (.format "Compiling {} should have failed" ~m)))))]
-    `(do ~s)))
+    `(do ~@s)))
 
 (defn test-defop-fail []
   (macroexpand-multi-assert-fail
