@@ -22,7 +22,7 @@ from [nREPL Built-in Ops](https://nrepl.org/nrepl/1.3/ops.html)
 - [ ] swap-middleware
 
 ## Usage
-HyREPL requires Python 3.10 and Hy over 0.2.9.
+HyREPL requires Python 3.11 and Hy over 0.2.9.
 
 To install
 
