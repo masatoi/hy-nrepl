@@ -92,8 +92,8 @@
 
                ;; class
                (inspect.isclass x)
-               (and (find-class-definition x path :lang lang)
-                    (return {}))
+               (or (find-class-definition x path :lang lang)
+                   1)
 
                ;; other
                :else
