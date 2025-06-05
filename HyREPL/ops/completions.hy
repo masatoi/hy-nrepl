@@ -77,14 +77,23 @@
                               "type" (object-type k)}))))
       matches)))
 
+;; Sort completion candidates putting private names (starting with "_") last
+(defn sort-matches [matches]
+  (sorted matches
+          :key (fn [d]
+                 (let [cand (.get d "candidate")
+                       parts (.split cand ".")
+                       name (get parts (- (len parts) 1))]
+                   [(.startswith name "_") cand]))))
+
 (defn get-completions [session stem [extra None]]
   (let [comp (TypedCompleter (. session.module __dict__))]
     (cond
       (in "." stem)
-      (.attr-matches comp stem)
+      (sort-matches (.attr-matches comp stem))
 
       True
-      (.global-matches comp stem))))
+      (sort-matches (.global-matches comp stem)))))
 
 ;; completions
 (defop "completions" [session msg transport]

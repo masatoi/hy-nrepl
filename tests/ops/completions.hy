@@ -37,6 +37,11 @@
 
   ;; Functions which could contain kebab-case symbol
   (setv result (get-completions session "tests.ops.sample_module."))
+  ;; ensure private names (starting with "_") are listed last
+  (setv cands (lfor d result (.get d "candidate")))
+  (setv nonpriv (lfor c cands :if (not (.startswith (get (.split c ".") (- (len (.split c ".")) 1)) "_")) c))
+  (setv priv (lfor c cands :if (.startswith (get (.split c ".") (- (len (.split c ".")) 1)) "_") c))
+  (assert (= cands (+ nonpriv priv)))
   (assert (= (lfor d result :if (= (.get d "candidate") "tests.ops.sample_module.hello") d)
              [{"candidate" "tests.ops.sample_module.hello" "type" "function"}]))
   (assert (= (lfor d result :if (= (.get d "candidate") "tests.ops.sample_module.hello-world") d)
