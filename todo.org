@@ -1,8 +1,15 @@
-* TODO <2025-05-31 Sat> Completion order
+* TODO <2025-06-08 Sun> Refactor HyREPL for nREPL-compliant streaming output
+- In `ops/eval.hy`, define a new file-like class (`StreamingOut`) that intercepts `sys.stdout`.
+- The `write` method of this class must immediately send the output as an `{"out": ...}` message via the nREPL transport.
+- In the `InterruptibleEval.run` method, replace the `StringIO` buffering of `sys.stdout` with an instance of this new `StreamingOut` class.
+- Remove the now-redundant code block that sent the buffered output after the evaluation completed.
+
+* DONE <2025-05-31 Sat> Completion order
+
 In completion, if the order of candidates is in lexicographical order, private methods, etc. that start with `_` will appear at the top.
 We would like to change the order and move them to the end.
 
-* TODO <2025-05-31 Sat> Completion when Variable name contain `-`
+* DONE <2025-05-31 Sat> Completion when Variable name contain `-`
 No completion if the variable name contains `-` (completion will appear if it is `_`)
 
 * DONE <2025-05-31 Sat> Handle inspect error: OSError: source code not available
