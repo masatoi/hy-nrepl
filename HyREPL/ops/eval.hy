@@ -1,4 +1,5 @@
-(import types
+(import io
+        types
         sys
         threading
         ctypes
@@ -39,6 +40,25 @@
       (do
         (ctypes.pythonapi.PyThreadState-SetAsyncExc tid 0)
         (raise (SystemError "PyThreadState-SetAsyncExc failed"))))))
+
+(defclass StreamingOut [io.TextIOBase]
+  "A file-like object that streams writes to an nREPL client."
+  (defn __init__ [self writer]
+    "Initializes with the writer function to send messages."
+    (setv self.writer writer))
+
+  (defn write [self text]
+    "Writes text by sending it immediately through the writer."
+    (when (> (len text) 0)
+      ;; Send received text as an "out" message
+      (self.writer {"out" text}))
+    ;; Python's write method must return the number of bytes written
+    (len text))
+
+  (defn flush [self]
+    "Flush is a no-op since writes are sent immediately."
+    ;; Nothing to do with this implementation.
+    None))
 
 (defclass InterruptibleEval [threading.Thread]
   ;; """Repl simulation. This is a thread so hangs don't block everything."""
@@ -83,24 +103,22 @@
           (.format-excp self (sys.exc-info))
           (self.writer {"status" ["done"] "id" (.get self.msg "id")}))
         (else
-          ;; TODO: add 'eval_msg' updates too the current session
           (let [p (StringIO)]
             (try
-              (do
-                (setv sys.stdout (StringIO))
-                (logging.debug "InterruptibleEval.run: msg=%s, expr=%s"
-                               self.msg (hy-repr self.expr))
-                (.write p (str (hy-repr (hy.eval self.expr
-                                                 :locals self.session.locals
-                                                 :module self.session.module)))))
+              (setv sys.stdout (StreamingOut self.writer))
+              (logging.debug "InterruptibleEval.run: msg=%s, expr=%s"
+                             self.msg (hy-repr self.expr))
+              (.write p (str (hy-repr (hy.eval self.expr
+                                               :locals self.session.locals
+                                               :module self.session.module))))
               (except [e Exception]
+                ;; Reset standard output even in the event of an error
                 (setv sys.stdout oldout)
                 (.format-excp self (sys.exc-info)))
               (else
-                (when (bool (.getvalue sys.stdout))
-                  (self.writer {"out" (.getvalue sys.stdout)}))
                 (self.writer {"value" (.getvalue p)
                               "ns" (.get self.msg "ns" "Hy")}))))
+          ;; Reset standard output even on normal termination
           (setv sys.stdout oldout)
           (self.writer {"status" ["done"]})))))
 

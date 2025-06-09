@@ -19,7 +19,8 @@
 
 (defn test-eval []
   (testing "(print \"Hello, world!\")"
-           [{"out" "Hello, world!\n"}
+           [{"out" "Hello, world!"}
+            {"out" "\n"}
             {"value" "None"
              "ns" "Hy"}
             {"status" ["done"]}])
@@ -31,7 +32,8 @@
 
 (defn test-multi-expression-eval []
   (testing ";; this is comment\n(print \"Hello, world!\")"
-           [{"out" "Hello, world!\n"}
+           [{"out" "Hello, world!"}
+            {"out" "\n"}
             {"value" "None"
              "ns" "Hy"}
             {"status" ["done"]}]))
@@ -51,7 +53,12 @@ arr"
 (print 2)
 (print 3)
 4"
-           [{"out" "1\n2\n3\n"}
+           [{"out" "1"}
+            {"out" "\n"}
+            {"out" "2"}
+            {"out" "\n"}
+            {"out" "3"}
+            {"out" "\n"}
             {"value" "4"
              "ns" "Hy"}
             {"status" ["done"]}]))

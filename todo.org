@@ -1,4 +1,4 @@
-* TODO <2025-06-08 Sun> Refactor HyREPL for nREPL-compliant streaming output
+* DONE <2025-06-08 Sun> Refactor HyREPL for nREPL-compliant streaming output
 - In `ops/eval.hy`, define a new file-like class (`StreamingOut`) that intercepts `sys.stdout`.
 - The `write` method of this class must immediately send the output as an `{"out": ...}` message via the nREPL transport.
 - In the `InterruptibleEval.run` method, replace the `StringIO` buffering of `sys.stdout` with an instance of this new `StreamingOut` class.
