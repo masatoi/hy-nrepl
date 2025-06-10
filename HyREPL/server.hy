@@ -1,27 +1,32 @@
-(import
-  sys
-  threading
-  time
-  logging
-  socketserver [ThreadingMixIn TCPServer BaseRequestHandler]
-  HyREPL.session [sessions Session]
-  HyREPL.bencode [decode]
-  toolz [last])
+(import sys
+        threading
+        time
+        logging
+        socketserver [ThreadingMixIn TCPServer BaseRequestHandler]
+        HyREPL.session [SessionRegistry]
+        HyREPL.bencode [decode]
+        toolz [last])
 
 ;; TODO: move these includes somewhere else
 ;; (import HyREPL.ops [eval complete info])
 (import HyREPL.ops)
 
 (import hyrule [inc])
-(require hyrule [defmain])
+(require hyrule [defmain unless])
+
+;; Global session registry
+(setv session-registry (SessionRegistry))
 
 (defclass ReplServer [TCPServer ThreadingMixIn]
   (setv allow-reuse-address True))
 
 (defclass ReplRequestHandler [BaseRequestHandler]
-  (setv session None)
   (defn handle [self]
     (print "New client" :file sys.stderr)
+
+    ;; Initializes instance session
+    (setv self.session None)
+
     (let [buf (bytearray)
           tmp None
           msg #()]
@@ -45,17 +50,21 @@
         (logging.debug "message=%s" m)
         (setv req (get m 0))
         (setv sid (.get req "session"))
+        (logging.debug "sid=%s" sid)
 
         ;; Create session if not exist
-        (when (is self.session None)
-          (setv self.session (.get sessions sid))
-          (when (is self.session None)
+        (unless self.session
+          (when sid
+            (setv self.session (session-registry.get sid)))
+          (unless self.session
             (logging.debug "session not found and created: finding session id=%s" sid)
-            (setv self.session (Session))))
+            (setv self.session (session-registry.create))))
 
         ;; Switch requested session
         (when (and sid (not (= self.session.uuid sid)))
-          (setv self.session (.get sessions sid)))
+          (setv self.session (session-registry.get sid)))
+
+        (logging.debug "create or found session=%s" self.session)
 
         (self.session.handle req self.request))
       (print "Client gone" :file sys.stderr))))

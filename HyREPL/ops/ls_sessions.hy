@@ -6,10 +6,11 @@
    "requires" {}
    "optional" {}
    "returns" {"sessions" "A list of running sessions"}}
-  (import HyREPL.session [sessions]) ; Imported here to avoid circ. dependency
+  ;; XXX: Imported here to avoid circ. dependency
+  (import HyREPL.server [session-registry])
   (.write session
           {"status" ["done"]
-           "sessions" (lfor s (.values sessions) s.uuid)
+           "sessions" (session-registry.list-ids)
            "id" (.get msg "id")
-           "session" session.uuid}
+           "session" session.id}
           transport))

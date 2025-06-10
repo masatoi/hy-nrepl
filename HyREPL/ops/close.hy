@@ -10,9 +10,11 @@
   (.write session
           {"status" ["done"]
            "id" (.get msg "id")
-           "session" session.uuid}
+           "session" session.id}
           transport)
-  (import HyREPL.session [sessions]) ; Imported here to avoid circ. dependency
+  ;; XXX: Imported here to avoid circ. dependency
+  (import HyREPL.server [session-registry])
   (try
-    (del (get sessions (.get msg "session" "")))
+    (let [sid (.get msg "session" "")]
+      (session-registry.remove sid))
     (except [e KeyError])))

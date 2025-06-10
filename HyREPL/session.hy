@@ -1,16 +1,14 @@
 (import sys
         logging
         uuid [uuid4]
-        threading [Lock])
+        threading [Lock]
+        types)
 (import HyREPL.bencode [encode])
 (import HyREPL.ops.utils [find-op])
 (import hyrule [assoc])
 (require hyrule [unless])
-(import hy.repl)
 
-(setv sessions {})
-
-(defclass Session [object]
+(defclass Session []
   (setv status "")
   (setv eval-id "")
   (setv stdin-id None)
@@ -19,24 +17,25 @@
   (setv module None)
   (setv locals None)
 
-  (defn __init__ [self [module hy.repl]]
-    (setv self.uuid (str (uuid4)))
-    (assoc sessions self.uuid self)
+  (defn __init__ [self [module None]]
+    (setv self.id (str (uuid4)))
     (setv self.lock (Lock))
+    (when (is module None)
+      (setv module (types.ModuleType f"hyrepl-session-{self.id}")))
     (setv self.module module)
     (setv self.locals module.__dict__)
     None)
 
   (defn __str__ [self]
-    self.uuid)
+    self.id)
 
   (defn __repr__ [self]
-    self.uuid)
+    self.id)
 
   (defn write [self msg transport]
     (assert (in "id" msg))
     (unless (in "session" msg)
-      (assoc msg "session" self.uuid))
+      (assoc msg "session" self.id))
     (logging.info "out: %s" msg)
     (try
       (.sendall transport (encode msg))
@@ -47,3 +46,29 @@
   (defn handle [self msg transport]
     (logging.info "in: %s" msg)
     ((find-op (.get msg "op")) self msg transport)))
+
+(defclass SessionRegistry []
+  (defn __init__ [self]
+    (setv self._sessions {})
+    (setv self._lock (Lock))
+    None)
+
+  (defn create [self]
+    (with [self._lock]
+      (let [sess (Session)]
+        (setv (get self._sessions sess.id) sess)
+        (logging.debug "create session: %s, _sessions: %s" sess self._sessions)
+        sess)))
+
+  (defn get [self sid]
+    (with [self._lock]
+      (logging.debug "_sessions: %s, sid: %s" self._sessions sid)
+      (.get self._sessions sid)))
+
+  (defn remove [self sid]
+    (with [self._lock]
+      (del (get self._sessions.pop sid))))
+
+  (defn list-ids [self]
+    (with [self._lock]
+      (list (self._sessions.keys)))))

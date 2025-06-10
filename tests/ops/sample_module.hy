@@ -7,7 +7,7 @@
   "This is docstring"
   (+ n 1))
 
-(defclass Foo [object]
+(defclass Foo []
   "Sample class Foo"
   (defn __init__ [self x]
     (setv self.x x))
