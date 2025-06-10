@@ -245,3 +245,41 @@
       (let [res (nrepl-client.receive)]
         (print "ls-sessions response:" res)
         (assert (not (in session1 (get res "sessions"))))))))
+
+(defn test-session-isolation [nrepl-client]
+  (let [resp1 (do (nrepl-client.send "clone" :params {})
+                  (nrepl-client.receive))
+        session1 (get resp1 "new-session")
+        resp2 (do (nrepl-client.send "clone" :params {})
+                  (nrepl-client.receive))
+        session2 (get resp2 "new-session")]
+
+    ;; Define a function only in session1
+    (nrepl-client.send "eval"
+                       :params {"code" "(defn foo [] 42)" "session" session1})
+    ;; Ignore the value and done responses
+    (nrepl-client.receive)
+    (nrepl-client.receive)
+
+    ;; Ensure the function works in session1
+    (let [msg-id (str (uuid4))]
+      (nrepl-client.send "eval"
+                         :params {"code" "(foo)" "session" session1}
+                         :msg-id msg-id)
+      (let [res1 (nrepl-client.receive)
+            res2 (nrepl-client.receive)]
+        (assert (= (get res1 "id") msg-id))
+        (assert (= (get res1 "value") "42"))
+        (assert (= (get (get res2 "status") 0) "done"))))
+
+    ;; Try calling the function from session2 and expect an eval-error
+    (let [msg-id (str (uuid4))]
+      (nrepl-client.send "eval"
+                         :params {"code" "(foo)" "session" session2}
+                         :msg-id msg-id)
+      (let [err1 (nrepl-client.receive)
+            err2 (nrepl-client.receive)
+            done (nrepl-client.receive)]
+        (assert (= (get err1 "id") msg-id))
+        (assert (in "eval-error" (get err1 "status")))
+        (assert (= (get (get done "status") 0) "done"))))))
