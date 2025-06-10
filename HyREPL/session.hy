@@ -58,6 +58,7 @@
   (defn create [self]
     (with [self._lock]
       (let [sess (Session)]
+        (setv sess.registry self)
         (setv (get self._sessions sess.id) sess)
         (logging.debug "create session: %s, _sessions: %s" sess self._sessions)
         sess)))
@@ -74,3 +75,4 @@
   (defn list-ids [self]
     (with [self._lock]
       (list (self._sessions.keys)))))
+

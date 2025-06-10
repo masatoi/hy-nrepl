@@ -12,9 +12,8 @@
            "id" (.get msg "id")
            "session" session.id}
           transport)
-  ;; XXX: Imported here to avoid circ. dependency
-  (import HyREPL.server [session-registry])
+  ;; registry is stored on the current session
   (try
-    (let [sid (.get msg "session" "")]
-      (session-registry.remove sid))
+    (let [sid (.get msg "session" "")] 
+      (session.registry.remove sid))
     (except [e KeyError])))

@@ -6,11 +6,10 @@
    "requires" {}
    "optional" {}
    "returns" {"sessions" "A list of running sessions"}}
-  ;; XXX: Imported here to avoid circ. dependency
-  (import HyREPL.server [session-registry])
+  ;; registry is stored on the current session
   (.write session
           {"status" ["done"]
-           "sessions" (session-registry.list-ids)
+           "sessions" (session.registry.list-ids)
            "id" (.get msg "id")
            "session" session.id}
           transport))
