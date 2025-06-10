@@ -14,20 +14,22 @@
 (import hyrule [inc])
 (require hyrule [defmain unless])
 
-;; Global session registry
-(setv session-registry (SessionRegistry))
 
 ;; When this file is executed as a script (e.g. via `hy -m HyREPL.server`),
 ;; Python registers the module under the name `__main__`.  Other modules
 ;; import it using the package name `HyREPL.server`, which would normally
-;; create a second instance with a separate `session-registry`.  To ensure
-;; a single shared registry, register this module under its package name
-;; when running as `__main__`.
+;; create a second instance of this module.  To ensure a single shared
+;; instance, register this module under its package name when running as
+;; `__main__`.
 (when (= __name__ "__main__")
   (setv (get sys.modules "HyREPL.server") (get sys.modules __name__)))
 
 (defclass ReplServer [TCPServer ThreadingMixIn]
-  (setv allow-reuse-address True))
+  (setv allow-reuse-address True)
+
+  (defn __init__ [self addr handler]
+    (.__init__ (super) addr handler)
+    (setv self.session_registry (SessionRegistry))))
 
 (defclass ReplRequestHandler [BaseRequestHandler]
   (defn handle [self]
@@ -64,14 +66,18 @@
         ;; Create session if not exist
         (unless self.session
           (when sid
-            (setv self.session (session-registry.get sid)))
+            (setv self.session (self.server.session_registry.get sid)))
           (unless self.session
             (logging.debug "session not found and created: finding session id=%s" sid)
-            (setv self.session (session-registry.create))))
+            (setv self.session (self.server.session_registry.create))))
+        (when self.session
+          (setv self.session.registry self.server.session_registry))
 
         ;; Switch requested session
         (when (and sid (not (= self.session.uuid sid)))
-          (setv self.session (session-registry.get sid)))
+          (setv self.session (self.server.session_registry.get sid))
+          (when self.session
+            (setv self.session.registry self.server.session_registry)))
 
         (logging.debug "create or found session=%s" self.session)
 
