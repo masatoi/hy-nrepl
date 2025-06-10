@@ -17,6 +17,15 @@
 ;; Global session registry
 (setv session-registry (SessionRegistry))
 
+;; When this file is executed as a script (e.g. via `hy -m HyREPL.server`),
+;; Python registers the module under the name `__main__`.  Other modules
+;; import it using the package name `HyREPL.server`, which would normally
+;; create a second instance with a separate `session-registry`.  To ensure
+;; a single shared registry, register this module under its package name
+;; when running as `__main__`.
+(when (= __name__ "__main__")
+  (setv (get sys.modules "HyREPL.server") (get sys.modules __name__)))
+
 (defclass ReplServer [TCPServer ThreadingMixIn]
   (setv allow-reuse-address True))
 
