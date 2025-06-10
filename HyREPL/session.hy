@@ -19,6 +19,8 @@
 
   (defn __init__ [self [module None]]
     (setv self.id (str (uuid4)))
+    ;; Keep backward compatibility with ``self.uuid`` used by server
+    (setv self.uuid self.id)
     (setv self.lock (Lock))
     (when (is module None)
       (setv module (types.ModuleType f"hyrepl-session-{self.id}")))
@@ -67,7 +69,7 @@
 
   (defn remove [self sid]
     (with [self._lock]
-      (del (get self._sessions.pop sid))))
+      (.pop self._sessions sid None)))
 
   (defn list-ids [self]
     (with [self._lock]
