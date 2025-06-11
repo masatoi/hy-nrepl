@@ -78,3 +78,34 @@ arr"
   (assert (= (get eval-error "status") ["eval-error"]))
   (assert (= (get eval-error "ex") "ZeroDivisionError"))
   (assert (= (get eval-error "root-ex") "ZeroDivisionError")))
+
+(defn test-eval-with-syntax-error []
+  (setv msg {"code" "(define x (foo bar"
+             "id" (str (uuid4))})
+  (setv session (Session))
+  (setv result [])
+  (setv writer (fn [x]
+                 (nonlocal result)
+                 (.append result x)))
+  (setv eval-instance (InterruptibleEval msg session writer))
+  (eval-instance.run)
+  (setv eval-error (first (filter (fn [d] (= (.get d "status") ["eval-error"])) result)))
+  (assert eval-error)
+  (assert (= (get eval-error "status") ["eval-error"]))
+  (assert (in (get eval-error "ex") ["HyLanguageError" "LexException" "PrematureEndOfInput"]))
+)
+
+(defn test-eval-with-name-error []
+  (setv msg {"code" "(this-is-not-defined)"
+             "id" (str (uuid4))})
+  (setv session (Session))
+  (setv result [])
+  (setv writer (fn [x]
+                 (nonlocal result)
+                 (.append result x)))
+  (setv eval-instance (InterruptibleEval msg session writer))
+  (eval-instance.run)
+  (setv eval-error (first (filter (fn [d] (= (.get d "status") ["eval-error"])) result)))
+  (assert eval-error)
+  (assert (= (get eval-error "status") ["eval-error"]))
+  (assert (= (get eval-error "ex") "NameError")))
