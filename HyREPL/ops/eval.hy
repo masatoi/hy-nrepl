@@ -98,29 +98,25 @@
     (let [code (get self.msg "code")
           oldout sys.stdout]
       (try
-        (setv self.expr (.tokenize self code))
+        (do
+          ;; tokenize and evaluate the code
+          (setv self.expr (.tokenize self code))
+          (setv sys.stdout (StreamingOut self.writer))
+          (let [p (StringIO)]
+            (logging.debug "InterruptibleEval.run: msg=%s, expr=%s"
+                           self.msg (hy-repr self.expr))
+            (.write p (str (hy-repr
+                            (hy.eval self.expr
+                                     :locals self.session.locals
+                                     :module self.session.module))))
+            (self.writer {"value" (.getvalue p)
+                          "ns" (.get self.msg "ns" "Hy")}))
+          (self.writer {"status" ["done"]}))
         (except [e Exception]
           (.format-excp self (sys.exc-info))
-          (self.writer {"status" ["done"] "id" (.get self.msg "id")}))
-        (else
-          (let [p (StringIO)]
-            (try
-              (setv sys.stdout (StreamingOut self.writer))
-              (logging.debug "InterruptibleEval.run: msg=%s, expr=%s"
-                             self.msg (hy-repr self.expr))
-              (.write p (str (hy-repr (hy.eval self.expr
-                                               :locals self.session.locals
-                                               :module self.session.module))))
-              (except [e Exception]
-                ;; Reset standard output even in the event of an error
-                (setv sys.stdout oldout)
-                (.format-excp self (sys.exc-info)))
-              (else
-                (self.writer {"value" (.getvalue p)
-                              "ns" (.get self.msg "ns" "Hy")}))))
-          ;; Reset standard output even on normal termination
-          (setv sys.stdout oldout)
-          (self.writer {"status" ["done"]})))))
+          (self.writer {"status" ["done"]}))
+        (finally
+          (setv sys.stdout oldout)))))
 
   (defn format-excp [self trace]
     (let [exc-type (first trace)
