@@ -16,6 +16,7 @@
         HyREPL.ops.utils [ops find-op])
 
 (require HyREPL.ops.utils [defop])
+(require hyrule [->])
 
 (defclass HyReplSTDIN [Queue]
   ;; """This is hack to override sys.stdin."""
@@ -204,6 +205,9 @@
    "optional" {"file-name" "name of the source file, for example for exceptions"
                "file-path" "path to the source file"}
    "returns" (get ops "eval" :desc "returns")}
+  ;; Extract the actual code text from the `file` field using a threading
+  ;; macro. The field has the form "<filename> <code>" and we want the code
+  ;; portion.
   (let [code (get (-> (get msg "file") (.split " " 2)) 2)]
     (print (.strip code) :file sys.stderr)
     (assoc msg "code" code)
