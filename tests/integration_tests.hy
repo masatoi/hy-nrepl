@@ -283,3 +283,59 @@
         (assert (= (get err1 "id") msg-id))
         (assert (in "eval-error" (get err1 "status")))
         (assert (= (get (get done "status") 0) "done"))))))
+
+(defn test-interrupt-long-running-eval [nrepl-client]
+  ;; Create a session first
+  (nrepl-client.send "clone" :params {})
+  (let [clone-res (nrepl-client.receive)
+        session-id (get clone-res "new-session")
+        eval-id (str (uuid4))
+        code "(import time) (time.sleep 5) 42"]
+
+    ;; Start long running eval
+    (nrepl-client.send "eval" :params {"code" code "session" session-id}
+                       :msg-id eval-id)
+    (time.sleep 0.5)
+
+    ;; Interrupt it
+    (let [interrupt-id (str (uuid4))]
+      (nrepl-client.send "interrupt"
+                         :params {"interrupt-id" eval-id "session" session-id}
+                         :msg-id interrupt-id)
+
+      (let [resp1 (nrepl-client.receive)
+            resp2 (nrepl-client.receive)
+            msgs [resp1 resp2]
+            interrupt-res (first (filter (fn [m] (= (get m "id") eval-id)) msgs))
+            done-res (first (filter (fn [m] (= (get m "id") interrupt-id)) msgs))]
+          (print "interrupt-res:" interrupt-res)
+          (print "done-res:" done-res)
+        (assert (in "interrupted" (get interrupt-res "status")))
+        (assert (in "done" (get interrupt-res "status")))
+        (assert (= (get done-res "status") ["done"]))))))
+
+(defn test-eval-with-stdin-interaction [nrepl-client]
+  ;; Create a session for the interaction
+  (nrepl-client.send "clone" :params {})
+  (let [clone-res (nrepl-client.receive)
+        session-id (get clone-res "new-session")
+        eval-id (str (uuid4))]
+
+    ;; Send eval that waits for input
+    (nrepl-client.send "eval"
+                       :params {"code" "(input \"Name?: \")" "session" session-id}
+                       :msg-id eval-id)
+
+    ;; Expect prompt and need-input status
+    (let [prompt (nrepl-client.receive)
+          need-input (nrepl-client.receive)]
+      (assert (in "Name?: " (.get prompt "out" "")))
+      (assert (in "need-input" (.get need-input "status")))
+
+      ;; Respond with stdin using same id
+      (nrepl-client.send "stdin" :params {"stdin" "HyREPL\n"} :msg-id eval-id)
+
+      (let [value-msg (nrepl-client.receive)
+            done-msg (nrepl-client.receive)]
+        (assert (= (get value-msg "value") "\"HyREPL\""))
+        (assert (= (get done-msg "status") ["done"]))))))
