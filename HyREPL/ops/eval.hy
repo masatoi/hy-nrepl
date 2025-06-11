@@ -204,7 +204,9 @@
    "optional" {"file-name" "name of the source file, for example for exceptions"
                "file-path" "path to the source file"}
    "returns" (get ops "eval" :desc "returns")}
-  (let [code (get (-> (get msg "file") (.split " " 2)) 2)]
+  ;; Extract the actual code text from the `file` field.
+  ;; The field has the form "<filename> <code>" and we want the code portion.
+  (let [code (get (.split (get msg "file") " " 2) 2)]
     (print (.strip code) :file sys.stderr)
     (assoc msg "code" code)
     (del (get msg "file"))
