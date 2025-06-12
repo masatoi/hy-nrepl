@@ -63,6 +63,7 @@
               (except [e Exception]
                 (logging.error "Attribute error. text=`%s`, error=%s" text e)))))
         matches)
+      (except [e NameError] [])
       (except [e Exception]
         (logging.error "Error in completions. text=`%s`, error=%s" text e)
         [])))
