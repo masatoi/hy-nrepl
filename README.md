@@ -1,5 +1,6 @@
 # HyREPL
 [![HyREPL unit test](https://github.com/masatoi/HyREPL/actions/workflows/hyrepl_test.yaml/badge.svg)](https://github.com/masatoi/HyREPL/actions/workflows/hyrepl_test.yaml)
+[![codecov](https://codecov.io/gh/masatoi/HyREPL/branch/master/graph/badge.svg)](https://codecov.io/gh/masatoi/HyREPL)
 
 HyREPL is an implementation of the [nREPL](https://nrepl.org) protocol for [Hy](https://github.com/hylang/hy).
 
