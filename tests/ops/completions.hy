@@ -11,14 +11,20 @@
     (setv eval-instance (InterruptibleEval {"code" code "id" (str (uuid4))} session writer))
     (eval-instance.run))
 
-  ;; Test for completion of self-defined functions
+  ;; Test for completion of self-defined functions and private names
   (eval-and-run "(do (defn add1 [x] (+ x 1))
-                     (defn add2 [x] (+ x 2)))")
+                     (defn add2 [x] (+ x 2))
+                     (defn _add0 [x] x))")
   (setv result (get-completions session "add"))
   (assert (= (lfor d result :if (= (.get d "candidate") "add1") d)
              [{"candidate" "add1" "type" "other"}]))
   (assert (= (lfor d result :if (= (.get d "candidate") "add2") d)
              [{"candidate" "add2" "type" "other"}]))
+  (assert (= (lfor d result :if (= (.get d "candidate") "_add0") d) []))
+
+  (setv result (get-completions session "_"))
+  (assert (= (lfor d result :if (= (.get d "candidate") "_add0") d)
+             [{"candidate" "_add0" "type" "other"}]))
 
   ;; Test for completion of os module functions
   (eval-and-run "(import os)")
@@ -37,11 +43,6 @@
 
   ;; Functions which could contain kebab-case symbol
   (setv result (get-completions session "tests.ops.sample_module."))
-  ;; ensure private names (starting with "_") are listed last
-  (setv cands (lfor d result (.get d "candidate")))
-  (setv nonpriv (lfor c cands :if (not (.startswith (get (.split c ".") (- (len (.split c ".")) 1)) "_")) c))
-  (setv priv (lfor c cands :if (.startswith (get (.split c ".") (- (len (.split c ".")) 1)) "_") c))
-  (assert (= cands (+ nonpriv priv)))
   (assert (= (lfor d result :if (= (.get d "candidate") "tests.ops.sample_module.hello") d)
              [{"candidate" "tests.ops.sample_module.hello" "type" "function"}]))
   (assert (= (lfor d result :if (= (.get d "candidate") "tests.ops.sample_module.hello-world") d)
@@ -83,4 +84,21 @@
   (assert (= (lfor d result :if (= (.get d "candidate") "foo-bar.get-x") d)
              [{"candidate" "foo-bar.get-x" "type" "method"}]))
   (assert (= (lfor d result :if (= (.get d "candidate") "foo-bar.x") d)
-             [{"candidate" "foo-bar.x" "type" "other"}])))
+             [{"candidate" "foo-bar.x" "type" "other"}]))
+
+  ;; Private attributes should not be suggested without prefix "_"
+  (eval-and-run "(defclass Baz []
+                     (defn __init__ [self]
+                       (setv self._y 1))
+                     (defn _get-y [self] self._y)
+                     (defn get-y [self] self._y))")
+  (eval-and-run "(setv baz (Baz))")
+
+  (setv result (get-completions session "baz."))
+  (assert (= (lfor d result :if (= (.get d "candidate") "baz.get-y") d)
+             [{"candidate" "baz.get-y" "type" "method"}]))
+  (assert (= (lfor d result :if (= (.get d "candidate") "baz._get_y") d) []))
+
+  (setv result (get-completions session "baz._"))
+  (assert (= (lfor d result :if (= (.get d "candidate") "baz._get_y") d)
+             [{"candidate" "baz._get_y" "type" "method"}])))

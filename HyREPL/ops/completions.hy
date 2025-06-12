@@ -12,6 +12,7 @@
 (import hy.reader.mangling [mangle unmangle])
 (import HyREPL.ops.utils [ops])
 (require HyREPL.ops.utils [defop])
+(require hyrule [->])
 
 (defn snake-to-kebab [s]
   (cond (= (len s) 0)
@@ -77,23 +78,35 @@
                               "type" (object-type k)}))))
       matches)))
 
-;; Sort completion candidates putting private names (starting with "_") last
+;; Sort completion candidates alphabetically
 (defn sort-matches [matches]
   (sorted matches
           :key (fn [d]
-                 (let [cand (.get d "candidate")
-                       parts (.split cand ".")
-                       name (get parts (- (len parts) 1))]
-                   [(.startswith name "_") cand]))))
+                 (.get d "candidate"))))
+
+;; Filter out private names unless the prefix starts with "_"
+(defn filter-private-matches [matches prefix]
+  (if (.startswith prefix "_")
+      matches
+      (lfor m matches
+            :if (not (.startswith
+                       (get (.split (.get m "candidate") ".")
+                            (- (len (.split (.get m "candidate") ".")) 1))
+                       "_"))
+            m)))
 
 (defn get-completions [session stem [extra None]]
   (let [comp (TypedCompleter (. session.module __dict__))]
     (cond
       (in "." stem)
-      (sort-matches (.attr-matches comp stem))
+      (-> (.attr-matches comp stem)
+          (filter-private-matches (second (split-by-last-dot stem)))
+          (sort-matches))
 
       True
-      (sort-matches (.global-matches comp stem)))))
+      (-> (.global-matches comp stem)
+          (filter-private-matches stem)
+          (sort-matches)))))
 
 ;; completions
 (defop "completions" [session msg transport]
