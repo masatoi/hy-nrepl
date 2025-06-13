@@ -39,7 +39,9 @@
 
 (defn split-by-last-dot [text]
   (let [matches (re.match r"(\S+(\.[\w-]+)*)\.([\w-]*)$" text)]
-    (.group matches 1 3)))
+    (if matches
+        (.group matches 1 3)
+        [text ""])))
 
 (defclass TypedCompleter [hy.completer.Completer]
   (defn attr-matches [self text]

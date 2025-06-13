@@ -102,3 +102,9 @@
   (setv result (get-completions session "baz._"))
   (assert (= (lfor d result :if (= (.get d "candidate") "baz._get_y") d)
              [{"candidate" "baz._get_y" "type" "method"}])))
+
+(defn test-get-completions-invalid-prefix []
+  "Completions should not crash on non-Python-like input."
+  (setv session (Session))
+  (setv result (get-completions session "https://example.com/foo"))
+  (assert (= result [])))
