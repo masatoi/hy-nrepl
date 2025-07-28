@@ -38,55 +38,72 @@
     ;; Initializes instance session
     (setv self.session None)
 
-    (let [buf (bytearray)
-          tmp None
-          msg #()]
-      (while True
-        (try
-          (setv tmp (.recv self.request 1024))
-          (except [e OSError]
-            (break)))
-        (when (= (len tmp) 0)
-          (break))
-        (.extend buf tmp)
-        (try
-          (do
-            (setv m (decode buf))
-            (.clear buf)
-            (.extend buf (get m 1)))
-          (except [e Exception]
-            (print e :file sys.stderr)
-            (continue)))
+    (try
+      (let [buf (bytearray)
+            tmp None
+            msg #()]
+        (while True
+          (try
+            (setv tmp (.recv self.request 1024))
+            (except [e OSError]
+              (break)))
+          (when (= (len tmp) 0)
+            (break))
+          (.extend buf tmp)
+          (try
+            (do
+              (setv m (decode buf))
+              (.clear buf)
+              (.extend buf (get m 1)))
+            (except [e Exception]
+              (print e :file sys.stderr)
+              (continue)))
 
-        (logging.debug "message=%s" m)
-        (setv req (get m 0))
-        (setv sid (.get req "session"))
-        (logging.debug "sid=%s" sid)
+          (logging.debug "message=%s" m)
+          (setv req (get m 0))
+          (setv sid (.get req "session"))
+          (logging.debug "sid=%s" sid)
 
-        ;; Create session if not exist
-        (unless self.session
-          (when sid
-            (setv self.session (self.server.session_registry.get sid)))
+          ;; Create session if not exist
           (unless self.session
-            (logging.debug "session not found and created: finding session id=%s" sid)
-            (setv self.session (self.server.session_registry.create))))
-        (when self.session
-          (setv self.session.registry self.server.session_registry))
-
-        ;; Switch requested session
-        (when (and sid (not (= self.session.uuid sid)))
-          (setv self.session (self.server.session_registry.get sid))
+            (when sid
+              (setv self.session (self.server.session_registry.get sid)))
+            (unless self.session
+              (logging.debug "session not found and created: finding session id=%s" sid)
+              (setv self.session (self.server.session_registry.create))))
           (when self.session
-            (setv self.session.registry self.server.session_registry)))
+            (setv self.session.registry self.server.session_registry))
 
-        (logging.debug "create or found session=%s" self.session)
+          ;; Switch requested session
+          (when (and sid (not (= self.session.uuid sid)))
+            (setv self.session (self.server.session_registry.get sid))
+            (when self.session
+              (setv self.session.registry self.server.session_registry)))
 
-        (self.session.handle req self.request))
-      (print "Client gone" :file sys.stderr))))
+          (logging.debug "create or found session=%s" self.session)
+
+          (try
+            (self.session.handle req self.request)
+            (except [e Exception]
+              (logging.exception "Error handling request: %s" req)
+              (break)))
+        )
+      )
+      (except [e Exception]
+          (logging.exception "Unhandled exception in request handler"))
+        (finally
+          ;; The handler thread exits here, but serve-forever keeps running
+          ;; so the server will continue accepting new clients.
+          (logging.info "Client gone")))))
 
 (defn start-server [[ip "127.0.0.1"] [port 7888]]
   (let [s (ReplServer #(ip port) ReplRequestHandler)
-        t (threading.Thread :target s.serve-forever)]
+        t (threading.Thread
+            :target (fn []
+                      (try
+                        (s.serve-forever)
+                        (except [e Exception]
+                          (logging.exception "Server thread crashed")))))]
     (setv t.daemon True)
     (.start t)
     #(t s)))
