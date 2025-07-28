@@ -92,7 +92,9 @@
       (except [e Exception]
           (logging.exception "Unhandled exception in request handler"))
         (finally
-          (print "Client gone" :file sys.stderr)))))
+          ;; The handler thread exits here, but serve-forever keeps running
+          ;; so the server will continue accepting new clients.
+          (logging.info "Client gone")))))
 
 (defn start-server [[ip "127.0.0.1"] [port 7888]]
   (let [s (ReplServer #(ip port) ReplRequestHandler)
