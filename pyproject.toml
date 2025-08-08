@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hy-nrepl"
+version = "1.0.0"
+description = "nREPL implementation in Hylang"
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "Satoshi Imai", email = "satoshi.imai@gmail.com" }]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Operating System :: OS Independent",
+  "Programming Language :: Lisp",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "License :: OSI Approved :: MIT License",
+]
+dependencies = [
+  "hy>=0.29.0",
+  "hyrule>=0.6.0",
+  "toolz",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8.3"]
+
+[project.urls]
+Homepage = "https://github.com/masatoi/hy-nrepl"
+Repository = "https://github.com/masatoi/hy-nrepl"
+Issues = "https://github.com/masatoi/hy-nrepl/issues"
+
+[tool.setuptools]
+script-files = ["bin/hy-nrepl"]
+
+[tool.setuptools.packages.find]
+exclude = ["tests"]
+
+[tool.setuptools.package-data]
+"hy_nrepl" = ["*.hy"]
+"hy_nrepl.middleware" = ["*.hy"]
+"hy_nrepl.ops" = ["*.hy"]

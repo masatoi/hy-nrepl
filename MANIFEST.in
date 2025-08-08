@@ -1,0 +1,3 @@
+recursive-include hy_nrepl *.hy
+recursive-include hy_nrepl/middleware *.hy
+recursive-include hy_nrepl/ops *.hy
