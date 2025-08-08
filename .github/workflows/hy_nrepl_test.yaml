@@ -8,7 +8,7 @@ on:
 
 jobs:
   build:
-    name: Hy ${{ matrix.hy-version }}
+    name: Python ${{ matrix.python-version }}, Hy ${{ matrix.hy-version }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
