@@ -12,8 +12,9 @@
 
 ## Build, Test, and Development Commands
 - Install (PyPI): `pip install hy-nrepl`
-- Dev deps: `pip install -r requirements.txt`
+- Dev deps: `pip install -r requirements.txt` (includes `pytest`)
 - Editable install: `pip install -e .`
+- Alt test deps: `pip install -e .[test]`
 - Run tests: `pytest tests`
 - Run server: `hy-nrepl` or `hy -m hy-nrepl.server --debug 7888`
 - Local client check: connect to `localhost:<port>` (default 7888) with your nREPL client.

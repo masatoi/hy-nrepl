@@ -23,7 +23,7 @@ from [nREPL Built-in Ops](https://nrepl.org/nrepl/1.3/ops.html)
 - [ ] swap-middleware
 
 ## Usage
-hy-nrepl requires Python over 3.11 and Hy over 0.2.9.
+hy-nrepl requires Python >= 3.11 and Hy >= 0.29.0.
 
 To install
 
@@ -39,7 +39,16 @@ hy-nrepl
 hy-nrepl --debug 7888
 ```
 
-To run the tests, simply execute `pytest tests` in project root directory.
+Testing
+-------
+
+Install test dependencies, then run pytest:
+
+```sh
+pip install -e .[test]
+
+pytest tests
+```
 
 ## Confirmed working nREPL clients
 

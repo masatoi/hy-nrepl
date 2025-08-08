@@ -5,19 +5,27 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "hy-nrepl"
 version = "1.0.0"
-description = "nREPL implementation in Hylang"
+description = "nREPL implementation for Hy (Hylang)"
 readme = { file = "README.md", content-type = "text/markdown" }
 requires-python = ">=3.11"
-license = { file = "LICENSE" }
-authors = [{ name = "Satoshi Imai", email = "satoshi.imai@gmail.com" }]
+license = { text = "MIT" }
+authors = [
+  { name = "Morten Linderud" },
+  { name = "Gregor Best" },
+  { name = "Satoshi Imai" }
+]
+keywords = ["hy", "hylang", "nrepl", "repl"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
-  "Programming Language :: Lisp",
+  "Programming Language :: Python",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
-  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Lisp",
+  "Topic :: Software Development :: Libraries",
 ]
 dependencies = [
   "hy>=0.29.0",
@@ -26,20 +34,32 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-test = ["pytest>=8.3"]
+test = [
+  "pytest>=8.3",
+]
 
 [project.urls]
 Homepage = "https://github.com/masatoi/hy-nrepl"
-Repository = "https://github.com/masatoi/hy-nrepl"
 Issues = "https://github.com/masatoi/hy-nrepl/issues"
+CI = "https://github.com/masatoi/hy-nrepl/actions"
 
 [tool.setuptools]
+include-package-data = true
 script-files = ["bin/hy-nrepl"]
 
 [tool.setuptools.packages.find]
-exclude = ["tests"]
+exclude = ["tests", "tests.*"]
 
 [tool.setuptools.package-data]
 "hy_nrepl" = ["*.hy"]
 "hy_nrepl.middleware" = ["*.hy"]
 "hy_nrepl.ops" = ["*.hy"]
+
+[tool.pytest.ini_options]
+python_functions = ["test_*", "hyx_test_*"]
+
+filterwarnings = [
+  "once::DeprecationWarning",
+  "once::PendingDeprecationWarning",
+  "ignore::SyntaxWarning",
+]
