@@ -18,7 +18,7 @@
 (require hy-nrepl.ops.utils [defop])
 (require hyrule [->])
 
-(defclass HyReplSTDIN [Queue]
+(defclass HyNReplSTDIN [Queue]
   ;; """This is hack to override sys.stdin."""
   (defn __init__ [self write]
     (.__init__ (super))
@@ -69,7 +69,7 @@
     (setv self.writer writer)
     (setv self.msg msg)
     (setv self.session session)
-    (setv sys.stdin (HyReplSTDIN writer))
+    (setv sys.stdin (HyNReplSTDIN writer))
     ;; we're locked under self.session.lock, so modification is safe
     (setv self.session.eval-id (.get msg "id"))
     None)

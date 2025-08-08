@@ -1,5 +1,5 @@
 # hy-nrepl
-[![hy-nrepl unit test](https://github.com/masatoi/hy-nrepl/actions/workflows/hyrepl_test.yaml/badge.svg)](https://github.com/masatoi/hy-nrepl/actions/workflows/hyrepl_test.yaml)
+[![hy-nrepl unit test](https://github.com/masatoi/hy-nrepl/actions/workflows/hy_nrepl_test.yaml/badge.svg)](https://github.com/masatoi/hy-nrepl/actions/workflows/hy_nrepl_test.yaml)
 
 hy-nrepl is an implementation of the [nREPL](https://nrepl.org) protocol for [Hy](https://github.com/hylang/hy).
 
@@ -32,10 +32,10 @@ pip install git+https://github.com/masatoi/hy-nrepl.git
 
 To run server, (default port is 7888)
 ```sh
-hyrepl
+hy-nrepl
 
 # Output debug log and specify port
-hyrepl --debug 7888
+hy-nrepl --debug 7888
 ```
 
 To run the tests, simply execute `pytest tests` in project root directory.

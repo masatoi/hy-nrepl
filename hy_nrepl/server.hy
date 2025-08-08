@@ -114,7 +114,7 @@
   (when (or (in "-h" args)
             (in "--help" args))
     (print "Usage:
-  hyrepl [-d | --debug] [-h | --help] [<port>]
+  hy-nrepl [-d | --debug] [-h | --help] [<port>]
 
 Options:
   -h, --help      Show this usage
@@ -130,7 +130,7 @@ Options:
                logging.WARNING)
     :format "%(levelname)s:%(module)s: %(message)s (at %(filename)s:%(lineno)d in %(funcName)s)")
 
-  (logging.debug "Starting hyrepl: args=%s" args)
+  (logging.debug "Starting hy-nrepl: args=%s" args)
 
   (setv port
         (if (> (len args) 0)

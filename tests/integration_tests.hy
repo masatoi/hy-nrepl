@@ -100,7 +100,7 @@
 (setv SERVER-STARTUP-TIMEOUT 5)
 
 (defn [(pytest.fixture :scope "function")]
-  hyrepl-server []
+  hy-nrepl-server []
   "Fixture that starts the hy-nrepl server and provides client connection information"
 
   (let [host "127.0.0.1"
@@ -146,11 +146,11 @@
           (print "Server stderr after kill:\n" (stderr.decode :errors "ignore")))))))
 
 (defn [(pytest.fixture :scope "function")]
-  nrepl-client [hyrepl-server]
+  nrepl-client [hy-nrepl-server]
   "Provides an NreplClient instance connected to the running server."
-  (let [host (get hyrepl-server "host")
-        port (get hyrepl-server "port")
-        sock (get hyrepl-server "socket")]
+  (let [host (get hy-nrepl-server "host")
+        port (get hy-nrepl-server "port")
+        sock (get hy-nrepl-server "socket")]
     (with [client (NreplClient host port sock)]
       (yield client))))
 
@@ -341,10 +341,10 @@
         (assert (= (get value-msg "value") "\"hy-nrepl\""))
         (assert (= (get done-msg "status") ["done"]))))))
 
-(defn test-multiple-clients-concurrent-eval [hyrepl-server]
-  (let [host (get hyrepl-server "host")
-        port (get hyrepl-server "port")
-        base-sock (get hyrepl-server "socket")
+(defn test-multiple-clients-concurrent-eval [hy-nrepl-server]
+  (let [host (get hy-nrepl-server "host")
+        port (get hy-nrepl-server "port")
+        base-sock (get hy-nrepl-server "socket")
         results {}]
 
     (setv run-client

@@ -20,7 +20,7 @@ setup(
     author_email="morten@linderud.pw, gbe@unobtanium.de, satoshi.imai@gmail.com",
     long_description="nREPL implementation in Hylang",
     license="MIT",
-    scripts=["bin/hyrepl"],
+    scripts=["bin/hy-nrepl"],
     url="https://github.com/masatoi/hy-nrepl",
     platforms=["any"],
     classifiers=[
