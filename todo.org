@@ -1,4 +1,4 @@
-* DONE <2025-06-08 Sun> Refactor HyREPL for nREPL-compliant streaming output
+* DONE <2025-06-08 Sun> Refactor hy-nrepl for nREPL-compliant streaming output
 - In `ops/eval.hy`, define a new file-like class (`StreamingOut`) that intercepts `sys.stdout`.
 - The `write` method of this class must immediately send the output as an `{"out": ...}` message via the nREPL transport.
 - In the `InterruptibleEval.run` method, replace the `StringIO` buffering of `sys.stdout` with an instance of this new `StreamingOut` class.
@@ -37,22 +37,22 @@ Traceback (most recent call last):
   File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/socketserver.py", line 761, in __init__
     self.handle()
     ~~~~~~~~~~~^^
-  File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/site-packages/HyREPL/server.hy", line 60, in handle
+  File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/site-packages/hy-nrepl/server.hy", line 60, in handle
     (self.session.handle req self.request))
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/site-packages/HyREPL/session.hy", line 49, in handle
+  File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/site-packages/hy-nrepl/session.hy", line 49, in handle
     ((find-op (.get msg "op")) self msg transport)))
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/site-packages/HyREPL/ops/lookup.hy", line 132, in _hy_anon_var_32
+  File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/site-packages/hy-nrepl/ops/lookup.hy", line 132, in _hy_anon_var_32
     (let [info (get-info session (.get msg "sym"))]
                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/site-packages/HyREPL/ops/lookup.hy", line 120, in get_info
+  File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/site-packages/hy-nrepl/ops/lookup.hy", line 120, in get_info
     (.update result (get-source-details symbol))
                      ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/site-packages/HyREPL/ops/lookup.hy", line 92, in get_source_details
+  File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/site-packages/hy-nrepl/ops/lookup.hy", line 92, in get_source_details
     (find-class-definition x path :lang lang)
      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/site-packages/HyREPL/ops/lookup.hy", line 58, in find_class_definition
+  File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/site-packages/hy-nrepl/ops/lookup.hy", line 58, in find_class_definition
     (second (inspect.getsourcelines obj))
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
   File "/Users/wiz/.pyenv/versions/3.13.1/lib/python3.13/inspect.py", line 1238, in getsourcelines

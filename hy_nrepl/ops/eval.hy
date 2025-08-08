@@ -13,9 +13,9 @@
         hy.errors [hy-exc-filter]
         toolz [first second last]
         hyrule [assoc]
-        HyREPL.ops.utils [ops find-op])
+        hy-nrepl.ops.utils [ops find-op])
 
-(require HyREPL.ops.utils [defop])
+(require hy-nrepl.ops.utils [defop])
 (require hyrule [->])
 
 (defclass HyReplSTDIN [Queue]
@@ -144,7 +144,7 @@
                "id" "An opaque message ID that will be included in the response"}
    "returns" {"ex" "Type of the exception thrown, if any. If present, `value` will be absent."
               "ns" (+ "The current namespace after the evaluation of `code`."
-                      " For HyREPL, this will always be `Hy`.")
+                      " For hy-nrepl, this will always be `Hy`.")
               "root-ex" "Same as `ex`"
               "value" (+ "The values returned by `code` if execution was"
                          " successful. Absent if `ex` and `root-ex` are"

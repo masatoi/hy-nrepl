@@ -3,8 +3,8 @@
         uuid [uuid4]
         threading [Lock]
         types)
-(import HyREPL.bencode [encode])
-(import HyREPL.ops.utils [find-op])
+(import hy-nrepl.bencode [encode])
+(import hy-nrepl.ops.utils [find-op])
 (import hyrule [assoc])
 (require hyrule [unless])
 
@@ -23,7 +23,7 @@
     (setv self.uuid self.id)
     (setv self.lock (Lock))
     (when (is module None)
-      (setv module (types.ModuleType f"hyrepl-session-{self.id}")))
+      (setv module (types.ModuleType f"hy-nrepl-session-{self.id}")))
     (setv self.module module)
     (setv self.locals module.__dict__)
     None)

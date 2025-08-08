@@ -1,5 +1,5 @@
-(import HyREPL.ops.utils [ops])
-(require HyREPL.ops.utils [defop])
+(import hy-nrepl.ops.utils [ops])
+(require hy-nrepl.ops.utils [defop])
 
 (defop "ls-sessions" [session msg transport]
   {"doc" "Lists running sessions"

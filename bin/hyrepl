@@ -1,5 +1,0 @@
-#!/bin/sh
-
-# If you followed the setup instructions, HyREPL is in your Python path.
-
-hy -m HyREPL.server $@

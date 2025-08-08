@@ -3,26 +3,26 @@
         time
         logging
         socketserver [ThreadingMixIn TCPServer BaseRequestHandler]
-        HyREPL.session [SessionRegistry]
-        HyREPL.bencode [decode]
+        hy-nrepl.session [SessionRegistry]
+        hy-nrepl.bencode [decode]
         toolz [last])
 
 ;; TODO: move these includes somewhere else
-;; (import HyREPL.ops [eval complete info])
-(import HyREPL.ops)
+;; (import hy-nrepl.ops [eval complete info])
+(import hy-nrepl.ops)
 
 (import hyrule [inc])
 (require hyrule [defmain unless])
 
 
-;; When this file is executed as a script (e.g. via `hy -m HyREPL.server`),
+;; When this file is executed as a script (e.g. via `hy -m hy-nrepl.server`),
 ;; Python registers the module under the name `__main__`.  Other modules
-;; import it using the package name `HyREPL.server`, which would normally
+;; import it using the package name `hy-nrepl.server`, which would normally
 ;; create a second instance of this module.  To ensure a single shared
 ;; instance, register this module under its package name when running as
 ;; `__main__`.
 (when (= __name__ "__main__")
-  (setv (get sys.modules "HyREPL.server") (get sys.modules __name__)))
+  (setv (get sys.modules "hy-nrepl.server") (get sys.modules __name__)))
 
 (defclass ReplServer [TCPServer ThreadingMixIn]
   (setv allow-reuse-address True)

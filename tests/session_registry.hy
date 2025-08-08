@@ -1,4 +1,4 @@
-(import HyREPL.session [Session SessionRegistry])
+(import hy-nrepl.session [Session SessionRegistry])
 
 (defn test-create-and-get []
   (let [registry (SessionRegistry)

@@ -1,7 +1,7 @@
-(import HyREPL.session [Session])
-(import HyREPL.ops.eval [InterruptibleEval])
+(import hy-nrepl.session [Session])
+(import hy-nrepl.ops.eval [InterruptibleEval])
 (import uuid [uuid4])
-(import HyREPL.ops.completions [get-completions])
+(import hy-nrepl.ops.completions [get-completions])
 
 (defn test-get-completions []
   (setv session (Session))

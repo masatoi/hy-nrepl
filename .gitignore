@@ -1,6 +1,6 @@
 build/
 dist/
-HyREPL.egg-info/
+hy-nrepl.egg-info/
 
 *.swo
 *.swp

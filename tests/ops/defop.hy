@@ -1,7 +1,7 @@
 (import sys)
 (import toolz [first second nth])
-(import HyREPL.ops.utils [ops find-op])
-(require HyREPL.ops.utils [defop])
+(import hy-nrepl.ops.utils [ops find-op])
+(require hy-nrepl.ops.utils [defop])
 
 (defclass MockSession []
   (defn __init__ [self]

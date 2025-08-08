@@ -1,5 +1,5 @@
-(import HyREPL.session [Session])
-(import HyREPL.ops.utils [find-op])
+(import hy-nrepl.session [Session])
+(import hy-nrepl.ops.utils [find-op])
 (import queue [Queue])
 (import uuid [uuid4])
 (import sys)

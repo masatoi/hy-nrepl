@@ -1,6 +1,6 @@
 ;; Import necessary modules and functions
 (import toolz [first second])
-(import HyREPL.bencode [encode decode decode-multiple])
+(import hy-nrepl.bencode [encode decode decode-multiple])
 (import pytest)
 
 (require hyrule [->])
@@ -133,7 +133,7 @@
 ;;; from bencode-test.py
 ;;; https://www.nayuki.io/res/bittorrent-bencode-format-tools/bencode-test.py
 
-;; === Serialization Tests (HyREPL.bencode.encode) ===
+;; === Serialization Tests (hy-nrepl.bencode.encode) ===
 
 (defn test_serialize_integer []
   "Tests serialization of integers using Hy encode."
@@ -191,7 +191,7 @@
   ;; Keys sorted by string bytes: "\x03", "\x08"
   (assert (= (encode {"\x03" [] "\x08" {}}) #b"d1:\x03le1:\x08dee")))
 
-;; === Parsing Tests (HyREPL.bencode.decode) ===
+;; === Parsing Tests (hy-nrepl.bencode.decode) ===
 
 (defn test_parse_empty []
   "Tests parsing empty input raises an error (ValueError)."

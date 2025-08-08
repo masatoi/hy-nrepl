@@ -1,6 +1,6 @@
 (import toolz [first second])
-(import HyREPL.ops.utils [ops])
-(require HyREPL.ops.utils [defop])
+(import hy-nrepl.ops.utils [ops])
+(require hy-nrepl.ops.utils [defop])
 
 (defop close [session msg transport]
   {"doc" "Closes the specified session"

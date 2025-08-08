@@ -1,4 +1,4 @@
-name: HyREPL tests
+name: hy-nrepl tests
 
 on:
   push:

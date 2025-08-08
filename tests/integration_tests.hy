@@ -7,7 +7,7 @@
         uuid [uuid4]
         hyrule [assoc]
         threading)
-(import HyREPL.bencode [encode decode])
+(import hy-nrepl.bencode [encode decode])
 (require hyrule [unless])
 
 ;;; --- nREPL Client ---
@@ -101,11 +101,11 @@
 
 (defn [(pytest.fixture :scope "function")]
   hyrepl-server []
-  "Fixture that starts the HyREPL server and provides client connection information"
+  "Fixture that starts the hy-nrepl server and provides client connection information"
 
   (let [host "127.0.0.1"
         port (find-free-port)
-        command ["hy" "-m" "HyREPL.server" "--debug" (str port)]
+        command ["hy" "-m" "hy-nrepl.server" "--debug" (str port)]
         server-process (do (print f"Starting server:" (.join " " command))
                            (subprocess.Popen command
                                              :stdout subprocess.PIPE
@@ -334,14 +334,12 @@
       (assert (in "need-input" (.get need-input "status")))
 
       ;; Respond with stdin using same id
-      (nrepl-client.send "stdin" :params {"stdin" "HyREPL\n"} :msg-id eval-id)
+      (nrepl-client.send "stdin" :params {"stdin" "hy-nrepl\n"} :msg-id eval-id)
 
       (let [value-msg (nrepl-client.receive)
             done-msg (nrepl-client.receive)]
-        (assert (= (get value-msg "value") "\"HyREPL\""))
+        (assert (= (get value-msg "value") "\"hy-nrepl\""))
         (assert (= (get done-msg "status") ["done"]))))))
-
-
 
 (defn test-multiple-clients-concurrent-eval [hyrepl-server]
   (let [host (get hyrepl-server "host")
@@ -385,5 +383,4 @@
       (assert res2)
       (assert (!= (get res1 "session") (get res2 "session")))
       (assert (= (get res1 "value") "3"))
-      (assert (= (get res2 "value") "12"))
-    )))
+      (assert (= (get res2 "value") "12")))))

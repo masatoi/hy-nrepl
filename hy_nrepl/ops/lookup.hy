@@ -2,8 +2,8 @@
 (import pathlib [Path])
 (import hy.models [Symbol])
 (import hy.reader.mangling [mangle])
-(import HyREPL.ops.utils [ops])
-(require HyREPL.ops.utils [defop])
+(import hy-nrepl.ops.utils [ops])
+(require hy-nrepl.ops.utils [defop])
 (import toolz [first second nth])
 
 (defn resolve-module [sym]

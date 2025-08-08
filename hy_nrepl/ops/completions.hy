@@ -10,8 +10,8 @@
 
 (import toolz [first second])
 (import hy.reader.mangling [mangle unmangle])
-(import HyREPL.ops.utils [ops])
-(require HyREPL.ops.utils [defop])
+(import hy-nrepl.ops.utils [ops])
+(require hy-nrepl.ops.utils [defop])
 (require hyrule [->])
 
 (defn snake-to-kebab [s]
