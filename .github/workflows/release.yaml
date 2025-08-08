@@ -1,0 +1,20 @@
+name: publish
+on:
+  push:
+    tags: ["v*"]  # Distributed by Tag push
+permissions:
+  id-token: write
+  contents: read
+jobs:
+  build-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -U build
+      - run: python -m build # make dist/*.whl, *.tar.gz
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          verbose: true
