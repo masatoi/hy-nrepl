@@ -99,7 +99,7 @@ Add the following settings to your Emacs initialization file (e.g., `~/.emacs.d/
 ;;; jedhy is disabled as Rail provides completion.
 (use-package hy-mode
   :mode "\\.hy\\'"
-  :custom (hy-jedhy--enable? nil))
+  :init (setq hy-jedhy--enable? nil)
 
 ;;; Rail (loaded from the local path)
 (use-package rail
