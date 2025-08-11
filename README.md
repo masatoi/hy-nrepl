@@ -81,7 +81,7 @@ This setup uses a forked version of `Rail` that has been modified to work well w
 Clone the forked `Rail` repository from GitHub. This example clones it to the home directory (`~/Rail`).
 
 ```sh
-git clone [https://github.com/masatoi/Rail.git](https://github.com/masatoi/Rail.git) ~/Rail
+git clone https://github.com/masatoi/Rail.git ~/Rail
 ```
 
 **2. Configure Emacs**
