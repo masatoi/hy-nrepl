@@ -51,6 +51,13 @@ pip install -e .[test]
 pytest tests
 ```
 
+## Known Issues
+
+Code evaluation is performed in a thread that is not Python's main thread. Therefore, some libraries that expect to be run on the main thread will not work as expected.
+
+  - **GUI Libraries**: Libraries like **Tkinter** will not function correctly.
+  - **Plotting Libraries**: **Matplotlib** is known to have issues. As an alternative, you can use libraries like **Plotly**, which work without relying on the main thread.
+
 ## Confirmed working nREPL clients
 
 ### Emacs
