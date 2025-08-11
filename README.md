@@ -92,14 +92,15 @@ Add the following settings to your Emacs initialization file (e.g., `~/.emacs.d/
 ;;; Assumes use-package is already installed.
 ;;; If not, add bootstrap code for package.el and use-package.
 (require 'package)
-(add-to-list 'package-archives '("melpa" . "[https://melpa.org/packages/](https://melpa.org/packages/)") t)
+(add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
 (package-initialize)
 
 ;;; hy-mode (will be installed from MELPA)
 ;;; jedhy is disabled as Rail provides completion.
 (use-package hy-mode
+  :ensure t
   :mode "\\.hy\\'"
-  :init (setq hy-jedhy--enable? nil)
+  :init (setq hy-jedhy--enable? nil))
 
 ;;; Rail (loaded from the local path)
 (use-package rail
