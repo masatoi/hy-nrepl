@@ -124,8 +124,8 @@ Add the following settings to your Emacs initialization file (e.g., `~/.emacs.d/
 
 3.  **Developing with `.hy` files.** Once connected, opening a `.hy` file will automatically enable the minor mode `rail-interaction-mode`. This provides features like:
 
-      - Evaluating Hy S-expressions within the buffer
-      - Symbol completion
+      - Evaluating Hy S-expressions within the buffer ( `C-x C-e`, for region evaluation: `C-c C-r` )
+      - Symbol completion ( `TAB` at incomplete symbol )
       - Displaying function argument information via Eldoc
 
 4.  **Interrupting Execution.** While an evaluation is running in the REPL buffer, you can interrupt it by pressing `C-c C-c`.
