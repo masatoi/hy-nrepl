@@ -41,6 +41,12 @@ hy-nrepl
 hy-nrepl --debug 7888
 ```
 
+To run the MCP server over stdio for tooling integration:
+
+```sh
+hy-nrepl-mcp
+```
+
 ## Testing
 
 Install test dependencies, then run pytest:

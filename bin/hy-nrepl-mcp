@@ -1,0 +1,3 @@
+#!/bin/sh
+
+python -m hy_nrepl.mcp_server "$@"
