@@ -45,7 +45,7 @@ CI = "https://github.com/masatoi/hy-nrepl/actions"
 
 [tool.setuptools]
 include-package-data = true
-script-files = ["bin/hy-nrepl"]
+script-files = ["bin/hy-nrepl", "bin/hy-nrepl-mcp"]
 
 [tool.setuptools.packages.find]
 exclude = ["tests", "tests.*"]
