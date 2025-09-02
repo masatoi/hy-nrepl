@@ -1,7 +1,7 @@
 import asyncio
 import socket
 import uuid
-from typing import List
+from typing import List, Optional
 
 import hy  # ensure `.hy` modules can be imported
 # `modelcontextprotocol` is an optional dependency. Import lazily so tests and
@@ -13,6 +13,8 @@ except Exception:  # pragma: no cover - executed when MCP is missing
     FastMCP = None  # type: ignore[assignment]
 
 from hy_nrepl.bencode import encode, decode
+
+NREPL_SESSION: Optional[str] = None
 
 
 def _recv(sock: socket.socket, buf: bytearray) -> dict:
@@ -31,26 +33,33 @@ def _recv(sock: socket.socket, buf: bytearray) -> dict:
 
 def nrepl_eval(code: str, host: str = "127.0.0.1", port: int = 7888) -> str:
     """Evaluate Hy code through an nREPL server."""
+    global NREPL_SESSION
     with socket.create_connection((host, port)) as sock:
         buf = bytearray()
 
-        # Create a new session
-        sock.sendall(encode({"op": "clone"}))
-        session = _recv(sock, buf).get("new-session")
+        # Create a new session if we don't have one
+        if NREPL_SESSION is None:
+            sock.sendall(encode({"op": "clone"}))
+            NREPL_SESSION = _recv(sock, buf).get("new-session")
 
         # Send evaluation request
-        sock.sendall(encode({"op": "eval", "code": code, "session": session}))
+        sock.sendall(encode({"op": "eval", "code": code, "session": NREPL_SESSION}))
 
         values: List[str] = []
+        errors: List[str] = []
         while True:
             resp = _recv(sock, buf)
             if "value" in resp:
                 values.append(resp["value"])
+            if "err" in resp:
+                errors.append(resp["err"])
+            if "ex" in resp:
+                errors.append(f"Exception: {resp['ex']}")
             if resp.get("status") and "done" in resp["status"]:
                 break
 
-        # Close session
-        sock.sendall(encode({"op": "close", "session": session}))
+        if errors:
+            return "\n".join(errors)
         return "\n".join(values)
 
 
@@ -80,11 +89,13 @@ def nrepl_interrupt(
 
 def nrepl_lookup(sym: str, host: str = "127.0.0.1", port: int = 7888) -> dict:
     """Lookup information about a symbol via nREPL."""
+    global NREPL_SESSION
     with socket.create_connection((host, port)) as sock:
         buf = bytearray()
-        sock.sendall(encode({"op": "clone"}))
-        session = _recv(sock, buf).get("new-session")
-        sock.sendall(encode({"op": "lookup", "sym": sym, "session": session}))
+        if NREPL_SESSION is None:
+            sock.sendall(encode({"op": "clone"}))
+            NREPL_SESSION = _recv(sock, buf).get("new-session")
+        sock.sendall(encode({"op": "lookup", "sym": sym, "session": NREPL_SESSION}))
 
         info: dict = {}
         while True:
@@ -94,7 +105,6 @@ def nrepl_lookup(sym: str, host: str = "127.0.0.1", port: int = 7888) -> dict:
             if resp.get("status") and "done" in resp["status"]:
                 break
 
-        sock.sendall(encode({"op": "close", "session": session}))
         return info
 
 

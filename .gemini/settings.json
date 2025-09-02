@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "hy-nrepl-mcp": {
+      "command": "/Users/wiz/hy/hy-nrepl/bin/hy-nrepl-mcp",
+      "args": []
+    }
+  }
+}
