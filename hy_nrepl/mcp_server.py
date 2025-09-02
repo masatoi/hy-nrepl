@@ -3,7 +3,13 @@ import socket
 import uuid
 from typing import List
 
-from mcp.server import FastMCP
+# `modelcontextprotocol` is an optional dependency. Import lazily so tests and
+# consumers that only use the helper functions below can run without the MCP
+# package installed.
+try:  # pragma: no cover - exercised in CI when MCP is available
+    from mcp.server import FastMCP  # type: ignore
+except Exception:  # pragma: no cover - executed when MCP is missing
+    FastMCP = None  # type: ignore[assignment]
 
 from hy_nrepl.bencode import encode, decode
 
@@ -91,29 +97,31 @@ def nrepl_lookup(sym: str, host: str = "127.0.0.1", port: int = 7888) -> dict:
         return info
 
 
-mcp_server = FastMCP("hy-nrepl-mcp")
+if FastMCP is not None:  # pragma: no cover - only when MCP is installed
+    mcp_server = FastMCP("hy-nrepl-mcp")
 
+    @mcp_server.tool(name="eval")
+    def eval_tool(code: str) -> str:
+        """Evaluate Hy expressions via nREPL."""
+        return nrepl_eval(code)
 
-@mcp_server.tool(name="eval")
-def eval_tool(code: str) -> str:
-    """Evaluate Hy expressions via nREPL."""
-    return nrepl_eval(code)
+    @mcp_server.tool(name="interrupt")
+    def interrupt_tool(session: str, interrupt_id: str) -> List[str]:
+        """Interrupt a running eval in the given session."""
+        return nrepl_interrupt(session, interrupt_id)
 
+    @mcp_server.tool(name="lookup")
+    def lookup_tool(sym: str) -> dict:
+        """Lookup symbol information via nREPL."""
+        return nrepl_lookup(sym)
 
-@mcp_server.tool(name="interrupt")
-def interrupt_tool(session: str, interrupt_id: str) -> List[str]:
-    """Interrupt a running eval in the given session."""
-    return nrepl_interrupt(session, interrupt_id)
+    async def main() -> None:
+        await mcp_server.run_stdio_async()
+else:
+    mcp_server = None
 
-
-@mcp_server.tool(name="lookup")
-def lookup_tool(sym: str) -> dict:
-    """Lookup symbol information via nREPL."""
-    return nrepl_lookup(sym)
-
-
-async def main() -> None:
-    await mcp_server.run_stdio_async()
+    async def main() -> None:  # pragma: no cover - only when MCP missing
+        raise ModuleNotFoundError("mcp package is not installed")
 
 
 if __name__ == "__main__":  # pragma: no cover - manual execution only
