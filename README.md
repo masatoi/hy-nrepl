@@ -41,6 +41,16 @@ hy-nrepl
 hy-nrepl --debug 7888
 ```
 
+To run the MCP server over stdio for tooling integration:
+
+```sh
+hy-nrepl-mcp
+```
+
+The MCP server provides `eval` for code execution, `interrupt` to stop
+long-running evaluations, and `lookup` to retrieve symbol information
+via the underlying nREPL server.
+
 ## Testing
 
 Install test dependencies, then run pytest:
