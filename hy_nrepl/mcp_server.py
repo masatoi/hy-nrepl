@@ -3,6 +3,7 @@ import socket
 import uuid
 from typing import List
 
+import hy  # ensure `.hy` modules can be imported
 # `modelcontextprotocol` is an optional dependency. Import lazily so tests and
 # consumers that only use the helper functions below can run without the MCP
 # package installed.
