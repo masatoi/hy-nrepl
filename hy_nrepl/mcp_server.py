@@ -1,5 +1,6 @@
 import asyncio
 import socket
+import uuid
 from typing import List
 
 from mcp.server import FastMCP
@@ -46,6 +47,50 @@ def nrepl_eval(code: str, host: str = "127.0.0.1", port: int = 7888) -> str:
         return "\n".join(values)
 
 
+def nrepl_interrupt(
+    session: str,
+    interrupt_id: str,
+    host: str = "127.0.0.1",
+    port: int = 7888,
+) -> List[str]:
+    """Send an interrupt request for a running eval."""
+    with socket.create_connection((host, port)) as sock:
+        buf = bytearray()
+        msg_id = str(uuid.uuid4())
+        sock.sendall(
+            encode(
+                {
+                    "op": "interrupt",
+                    "session": session,
+                    "interrupt-id": interrupt_id,
+                    "id": msg_id,
+                }
+            )
+        )
+        resp = _recv(sock, buf)
+        return resp.get("status", [])
+
+
+def nrepl_lookup(sym: str, host: str = "127.0.0.1", port: int = 7888) -> dict:
+    """Lookup information about a symbol via nREPL."""
+    with socket.create_connection((host, port)) as sock:
+        buf = bytearray()
+        sock.sendall(encode({"op": "clone"}))
+        session = _recv(sock, buf).get("new-session")
+        sock.sendall(encode({"op": "lookup", "sym": sym, "session": session}))
+
+        info: dict = {}
+        while True:
+            resp = _recv(sock, buf)
+            if "info" in resp:
+                info = resp["info"]
+            if resp.get("status") and "done" in resp["status"]:
+                break
+
+        sock.sendall(encode({"op": "close", "session": session}))
+        return info
+
+
 mcp_server = FastMCP("hy-nrepl-mcp")
 
 
@@ -53,6 +98,18 @@ mcp_server = FastMCP("hy-nrepl-mcp")
 def eval_tool(code: str) -> str:
     """Evaluate Hy expressions via nREPL."""
     return nrepl_eval(code)
+
+
+@mcp_server.tool(name="interrupt")
+def interrupt_tool(session: str, interrupt_id: str) -> List[str]:
+    """Interrupt a running eval in the given session."""
+    return nrepl_interrupt(session, interrupt_id)
+
+
+@mcp_server.tool(name="lookup")
+def lookup_tool(sym: str) -> dict:
+    """Lookup symbol information via nREPL."""
+    return nrepl_lookup(sym)
 
 
 async def main() -> None:
