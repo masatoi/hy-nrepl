@@ -4,6 +4,7 @@
 (import pytest)
 (import toolz [first])
 (import hyrule [assoc])
+(import hy.models [Keyword])
 
 ;; Dummy transport to capture sendall data
 (defclass DummyTransport []
@@ -84,11 +85,11 @@
         old-eval (get ops "eval")
         old-f (get old-eval :f)]
     ;; stub eval op simply returns without side effects
-    (assoc old-eval :f (fn [#* _] None))
+    (assoc old-eval (Keyword "f") (fn [#* _] None))
     (let [msg {"id" "load" "file" "foo.clj  (print 3)"}]
       ((find-op "load-file") sess msg transport)
       ;; restore eval
-      (assoc old-eval :f old-f)
+      (assoc old-eval (Keyword "f") old-f)
       ;; verify msg transformed for eval
       (assert (= (get msg "code") "(print 3)"))
       (assert (not (in "file" msg)))))

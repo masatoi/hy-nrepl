@@ -1,7 +1,9 @@
 import asyncio
 import socket
 import uuid
+from pathlib import Path
 from typing import List, Optional
+from urllib.parse import urlparse, unquote
 
 import hy  # ensure `.hy` modules can be imported
 
@@ -74,6 +76,40 @@ def nrepl_interrupt(
         return resp.get("status", [])
 
 
+def _extract_definition(file_uri: str, line: int) -> Optional[str]:
+    """Return source snippet starting at *line* from *file_uri*.
+
+    The snippet includes the definition line and any indented lines that
+    follow, stopping at the first blank line or dedent."""
+
+    try:
+        parsed = urlparse(file_uri)
+        if parsed.scheme != "file":
+            return None
+        path = Path(unquote(parsed.path))
+        lines = path.read_text().splitlines()
+    except OSError:
+        return None
+
+    if not 1 <= line <= len(lines):
+        return None
+
+    start = line - 1
+
+    def indent(s: str) -> int:
+        return len(s) - len(s.lstrip())
+
+    base_indent = indent(lines[start])
+    snippet = [lines[start].rstrip()]
+    for l in lines[start + 1 :]:
+        if not l.strip():
+            break
+        if indent(l) <= base_indent:
+            break
+        snippet.append(l.rstrip())
+    return "\n".join(snippet)
+
+
 def nrepl_lookup(sym: str, host: str = "127.0.0.1", port: int = 7888) -> dict:
     """Lookup information about a symbol via nREPL."""
     global NREPL_SESSION
@@ -94,6 +130,11 @@ def nrepl_lookup(sym: str, host: str = "127.0.0.1", port: int = 7888) -> dict:
                 info = resp["info"]
             if resp.get("status") and "done" in resp["status"]:
                 break
+
+        if info.get("file") and info.get("line"):
+            definition = _extract_definition(info["file"], info["line"])
+            if definition:
+                info["definition"] = definition
 
         return info
 
