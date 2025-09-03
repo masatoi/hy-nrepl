@@ -30,6 +30,26 @@ def test_nrepl_lookup_basic():
         thread.join(timeout=1)
 
 
+def test_nrepl_lookup_returns_definition():
+    mcp_server.NREPL_SESSION = None  # Ensure clean state before test
+    thread, srv = start_server("127.0.0.1", 0)
+    host, port = srv.server_address
+    try:
+        nrepl_eval(
+            "(import tests.lookup-module [lookup-target])",
+            host=host,
+            port=port,
+        )
+        info = nrepl_lookup("lookup-target", host=host, port=port)
+        assert info.get("name") == "lookup-target"
+        assert "definition" in info
+        assert "lookup-target" in info["definition"]
+    finally:
+        mcp_server.NREPL_SESSION = None  # Clean up after test
+        srv.shutdown()
+        thread.join(timeout=1)
+
+
 def test_nrepl_eval_session_persistence():
     mcp_server.NREPL_SESSION = None  # Ensure clean state before test
     thread, srv = start_server("127.0.0.1", 0)
