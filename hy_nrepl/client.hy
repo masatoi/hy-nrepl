@@ -12,7 +12,7 @@
     (setv self.host host
           self.port port
           self.timeout timeout
-          self.socket (or sock 
+          self.socket (or sock
                           (socket.create_connection (tuple [host port])
                                                     :timeout timeout))
           self.buffer (bytearray))
