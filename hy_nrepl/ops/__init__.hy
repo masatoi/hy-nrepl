@@ -6,6 +6,7 @@
         hy-nrepl.ops.completions
         hy-nrepl.ops.describe
         hy-nrepl.ops.eval
+        hy-nrepl.ops.load_file
         hy-nrepl.ops.lookup
         hy-nrepl.ops.ls_sessions
         hy-nrepl.ops.stdin)

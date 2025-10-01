@@ -8,7 +8,7 @@
   (setv writer (fn [x])) ; mock writer
 
   (defn eval-and-run [code]
-    (setv eval-instance (InterruptibleEval {"code" code "id" (str (uuid4))} session writer))
+    (setv eval-instance (InterruptibleEval session {"code" code "id" (str (uuid4))} writer))
     (eval-instance.run))
 
   ;; Test for completion of self-defined functions and private names

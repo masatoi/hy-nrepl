@@ -2,10 +2,12 @@
         threading
         time
         logging
+        argparse
         socketserver [ThreadingMixIn TCPServer BaseRequestHandler]
         hy-nrepl.session [SessionRegistry]
         hy-nrepl.bencode [decode]
-        toolz [last])
+        hy-nrepl.backends [make-backend-factory]
+        toolz [first last])
 
 ;; TODO: move these includes somewhere else
 ;; (import hy-nrepl.ops [eval complete info])
@@ -27,9 +29,9 @@
 (defclass ReplServer [TCPServer ThreadingMixIn]
   (setv allow-reuse-address True)
 
-  (defn __init__ [self addr handler]
+  (defn __init__ [self addr handler [backend-factory None] [backend-name "process"]]
     (.__init__ (super) addr handler)
-    (setv self.session_registry (SessionRegistry))))
+    (setv self.session_registry (SessionRegistry backend-factory backend-name))))
 
 (defclass ReplRequestHandler [BaseRequestHandler]
   (defn handle [self]
@@ -96,8 +98,8 @@
           ;; so the server will continue accepting new clients.
           (logging.info "Client gone")))))
 
-(defn start-server [[ip "127.0.0.1"] [port 7888]]
-  (let [s (ReplServer #(ip port) ReplRequestHandler)
+(defn start-server [[ip "127.0.0.1"] [port 7888] [backend-factory None] [backend-name "process"]]
+  (let [s (ReplServer #(ip port) ReplRequestHandler backend-factory backend-name)
         t (threading.Thread
             :target (fn []
                       (try
@@ -108,40 +110,33 @@
     (.start t)
     #(t s)))
 
+(defn parse-args [argv]
+  (let [parser (argparse.ArgumentParser :prog "hy-nrepl")]
+    (.add_argument parser "-d" "--debug" :action "store_true" :dest "debug")
+    (.add_argument parser "--eval-backend" :choices ["thread" "process"] :default "process")
+    (.add_argument parser "port" :nargs "?" :default 7888 :type int)
+    (.parse_args parser argv)))
+
+
 (defmain [#* args]
+  (setv argv (list args))
+  (when (and (> (len argv) 0)
+             (.endswith (first argv) ".hy"))
+    (setv argv (list (cut argv 1 None))))
+  (setv parsed (parse-args argv))
 
-  ;; Show usage
-  (when (or (in "-h" args)
-            (in "--help" args))
-    (print "Usage:
-  hy-nrepl [-d | --debug] [-h | --help] [<port>]
-
-Options:
-  -h, --help      Show this usage
-  -d, --debug     Debug mode (true/false) [default: false]
-  <port>          Port number [default: 7888]")
-    (return 0))
-
-  ;; Settings for logging
   (logging.basicConfig
-    :level (if (or (in "-d" args)
-                   (in "--debug" args))
-               logging.DEBUG
-               logging.WARNING)
+    :level (if parsed.debug logging.DEBUG logging.WARNING)
     :format "%(levelname)s:%(module)s: %(message)s (at %(filename)s:%(lineno)d in %(funcName)s)")
 
   (logging.debug "Starting hy-nrepl: args=%s" args)
 
-  (setv port
-        (if (> (len args) 0)
-            (try
-              (int (last args))
-              (except [_ ValueError]
-                7888))
-            7888))
+  (setv backend-name parsed.eval_backend)
+  (setv backend-factory (make-backend-factory backend-name))
+  (setv port parsed.port)
   (while True
     (try
-       (start-server "127.0.0.1" port)
+       (start-server "127.0.0.1" port backend-factory backend-name)
        (except [e OSError]
          (setv port (inc port)))
        (else

@@ -39,6 +39,9 @@ hy-nrepl
 
 # Output debug log and specify port
 hy-nrepl --debug 7888
+
+# Use the legacy thread-based evaluator
+hy-nrepl --eval-backend=thread
 ```
 
 To run the MCP server over stdio for tooling integration:
@@ -50,6 +53,39 @@ hy-nrepl-mcp
 The MCP server provides `eval` for code execution, `interrupt` to stop
 long-running evaluations, and `lookup` to retrieve symbol information
 via the underlying nREPL server.
+
+## Evaluation backends
+
+hy-nrepl ships with two evaluation engines:
+
+- **process** (default): each nREPL session is backed by an isolated worker
+  subprocess. This enables safe interruption (soft and hard), better
+  compatibility with GUI/plotting toolkits such as matplotlib, and
+  automatic recovery if a worker crashes.
+- **thread**: the legacy in-process evaluator retained for backward
+  compatibility. Use `--eval-backend=thread` to opt in.
+
+The active backend is reported in the `describe` op under the `backend`
+key.
+
+### Interrupt Behavior
+
+The process backend supports two-stage interrupt handling:
+
+1. **Soft Interrupt** (0.5s timeout): Uses `sys.settrace()` for cooperative
+   cancellation. This works immediately for pure Python code but does not
+   interrupt blocking C-level calls (e.g., `time.sleep()`, socket I/O, file
+   operations).
+
+2. **Hard Interrupt** (2.0s timeout): If soft interrupt fails, the worker
+   process is terminated with SIGTERM, then SIGKILL if necessary. This
+   forcibly stops any blocking operation.
+
+**Practical impact**: Pure Python loops interrupt instantly, while blocking
+C calls like `time.sleep(10)` will interrupt after approximately 0.5 seconds
+when the hard interrupt escalates. This is a fundamental Python limitation
+in multi-threaded environments where `sys.settrace()` cannot intercept
+C-level blocking operations.
 
 ## Testing
 
@@ -63,10 +99,11 @@ pytest tests
 
 ## Known Issues
 
-Code evaluation is performed in a thread that is not Python's main thread. Therefore, some libraries that expect to be run on the main thread will not work as expected.
-
-  - **GUI Libraries**: Libraries like **Tkinter** will not function correctly.
-  - **Plotting Libraries**: **Matplotlib** is known to have issues. As an alternative, you can use libraries like **Plotly**, which work without relying on the main thread.
+When using the legacy thread backend (`--eval-backend=thread`), code runs in
+an auxiliary thread rather than the Python main thread. Some GUI toolkits
+and plotting libraries expect main-thread execution and may not behave
+correctly under that backend. The default process backend does not suffer
+from these limitations.
 
 ## Confirmed working nREPL clients
 

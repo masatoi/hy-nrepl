@@ -130,10 +130,16 @@
 (defop lookup [session msg transport]
   {"doc" "Lookup symbol info"
    "requires" {"sym" "The symbol to look up"}
-   "returns" {"info" "A map of the symbol’s info."
+   "returns" {"info" "A map of the symbol's info."
               "status" "done"}}
   (logging.debug "lookup: msg=%s" msg)
-  (let [info (get-info session (.get msg "sym"))]
+  (let [symbol (.get msg "sym")
+        info (if (and session.backend
+                      (hasattr session.backend "lookup"))
+                 ;; Use backend lookup (for process backend)
+                 (session.backend.lookup symbol)
+                 ;; Fallback to session.module (for thread backend)
+                 (get-info session symbol))]
     (.write session
             {"info" info
              "id" (.get msg "id")

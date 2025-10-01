@@ -120,7 +120,14 @@
                "options" "A map of options supported by the completion function. Supported keys: extra-metadata (possible values: :arglists, :docs)"}
    "returns" {"completions" "A list of possible completions"}}
   ;; (print "Complete: " msg :file sys.stderr)
-  (.write session {"id" (.get msg "id")
-                   "completions" (get-completions session (.get msg "prefix"))
-                   "status" ["done"]}
-          transport))
+  (let [prefix (.get msg "prefix")
+        completions (if (and session.backend
+                             (hasattr session.backend "completions"))
+                        ;; Use backend completions (for process backend)
+                        (session.backend.completions prefix)
+                        ;; Fallback to session.module (for thread backend)
+                        (get-completions session prefix))]
+    (.write session {"id" (.get msg "id")
+                     "completions" completions
+                     "status" ["done"]}
+            transport)))
