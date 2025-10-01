@@ -16,6 +16,8 @@
   (setv last-traceback None)
   (setv module None)
   (setv locals None)
+  (setv backend None)
+  (setv backend-name None)
 
   (defn __init__ [self [module None]]
     (setv self.id (str (uuid4)))
@@ -50,15 +52,20 @@
     ((find-op (.get msg "op")) self msg transport)))
 
 (defclass SessionRegistry []
-  (defn __init__ [self]
+  (defn __init__ [self [backend-factory None] [backend-name "thread"]]
     (setv self._sessions {})
     (setv self._lock (Lock))
+    (setv self._backend-factory backend-factory)
+    (setv self.backend-name backend-name)
     None)
 
   (defn create [self]
     (with [self._lock]
       (let [sess (Session)]
         (setv sess.registry self)
+        (setv sess.backend-name self.backend-name)
+        (when self._backend-factory
+          (setv sess.backend (self._backend-factory sess)))
         (setv (get self._sessions sess.id) sess)
         (logging.debug "create session: %s, _sessions: %s" sess self._sessions)
         sess)))
