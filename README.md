@@ -68,6 +68,25 @@ hy-nrepl ships with two evaluation engines:
 The active backend is reported in the `describe` op under the `backend`
 key.
 
+### Interrupt Behavior
+
+The process backend supports two-stage interrupt handling:
+
+1. **Soft Interrupt** (0.5s timeout): Uses `sys.settrace()` for cooperative
+   cancellation. This works immediately for pure Python code but does not
+   interrupt blocking C-level calls (e.g., `time.sleep()`, socket I/O, file
+   operations).
+
+2. **Hard Interrupt** (2.0s timeout): If soft interrupt fails, the worker
+   process is terminated with SIGTERM, then SIGKILL if necessary. This
+   forcibly stops any blocking operation.
+
+**Practical impact**: Pure Python loops interrupt instantly, while blocking
+C calls like `time.sleep(10)` will interrupt after approximately 0.5 seconds
+when the hard interrupt escalates. This is a fundamental Python limitation
+in multi-threaded environments where `sys.settrace()` cannot intercept
+C-level blocking operations.
+
 ## Testing
 
 Install test dependencies, then run pytest:

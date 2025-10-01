@@ -26,6 +26,16 @@ from hy.core.hy_repr import hy_repr
 from hy import models as hy_models
 from hy.reader import HyReader
 
+# Import completion and lookup functions
+try:
+    import hy.pyops as _  # Ensure hy.pyops is loaded
+    from hy_nrepl.ops.completions import get_completions as _get_completions
+    from hy_nrepl.ops.lookup import get_info as _get_info
+except ImportError as e:
+    # Fallback if imports fail
+    _get_completions = None
+    _get_info = None
+
 DEFAULT_CPU_LIMIT = 15
 DEFAULT_MEM_LIMIT = 512 * 1024 * 1024
 DEFAULT_MAX_HANDLES = 128
@@ -118,6 +128,10 @@ class Worker:
             self._handle_deref(cmd)
         elif op == "del":
             self._handle_del(cmd)
+        elif op == "completions":
+            self._handle_completions(cmd)
+        elif op == "lookup":
+            self._handle_lookup(cmd)
         elif op == "__shutdown__":
             self.shutdown_event.set()
         else:
@@ -269,6 +283,80 @@ class Worker:
                 "repr": f"deleted {handle}",
                 "handle": handle,
                 "elapsed_ms": 0,
+            })
+
+    def _handle_completions(self, cmd: Dict[str, Any]) -> None:
+        """Handle completions request from parent process."""
+        prefix = cmd.get("prefix", "")
+        start = time.perf_counter()
+        
+        if _get_completions is None:
+            self._emit({
+                "ok": False,
+                "type": "NotAvailable",
+                "message": "Completions not available",
+                "elapsed_ms": 0,
+            })
+            return
+        
+        try:
+            # Create a mock session-like object with our module
+            class MockSession:
+                def __init__(self, module):
+                    self.module = module
+            
+            mock_session = MockSession(self.module)
+            completions = _get_completions(mock_session, prefix)
+            
+            self._emit({
+                "ok": True,
+                "completions": completions,
+                "elapsed_ms": int((time.perf_counter() - start) * 1000),
+            })
+        except Exception as exc:
+            self._emit({
+                "ok": False,
+                "type": exc.__class__.__name__,
+                "message": str(exc),
+                "traceback": traceback.format_exc(),
+                "elapsed_ms": int((time.perf_counter() - start) * 1000),
+            })
+
+    def _handle_lookup(self, cmd: Dict[str, Any]) -> None:
+        """Handle lookup request from parent process."""
+        symbol = cmd.get("symbol", "")
+        start = time.perf_counter()
+        
+        if _get_info is None:
+            self._emit({
+                "ok": False,
+                "type": "NotAvailable",
+                "message": "Lookup not available",
+                "elapsed_ms": 0,
+            })
+            return
+        
+        try:
+            # Create a mock session-like object with our module
+            class MockSession:
+                def __init__(self, module):
+                    self.module = module
+            
+            mock_session = MockSession(self.module)
+            info = _get_info(mock_session, symbol)
+            
+            self._emit({
+                "ok": True,
+                "info": info,
+                "elapsed_ms": int((time.perf_counter() - start) * 1000),
+            })
+        except Exception as exc:
+            self._emit({
+                "ok": False,
+                "type": exc.__class__.__name__,
+                "message": str(exc),
+                "traceback": traceback.format_exc(),
+                "elapsed_ms": int((time.perf_counter() - start) * 1000),
             })
 
     # output ---------------------------------------------------------

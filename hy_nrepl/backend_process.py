@@ -15,8 +15,8 @@ LOGGER = logging.getLogger(__name__)
 DEFAULT_CPU_LIMIT = 15  # seconds
 DEFAULT_MEM_LIMIT = 512 * 1024 * 1024  # bytes (~512 MiB)
 DEFAULT_MAX_HANDLES = 128
-SOFT_INTERRUPT_TIMEOUT = 1.0  # seconds
-HARD_INTERRUPT_TIMEOUT = 5.0  # seconds
+SOFT_INTERRUPT_TIMEOUT = 0.5  # seconds - fast response for blocking calls
+HARD_INTERRUPT_TIMEOUT = 2.0  # seconds - quick escalation to hard kill
 
 
 class WorkerCrashed(RuntimeError):
@@ -352,6 +352,74 @@ class ProcessEvalBackend:
         if self.worker.alive:
             self.worker.terminate()
             self.worker.wait(0.5)
+
+    def completions(self, prefix: str) -> list:
+        """Get completions from the worker process.
+        
+        Parameters
+        ----------
+        prefix : str
+            The prefix to complete.
+            
+        Returns
+        -------
+        list
+            List of completion dictionaries.
+        """
+        payload = {
+            "op": "completions",
+            "prefix": prefix,
+            "session": self.session.id,
+        }
+        
+        self._ensure_worker()
+        try:
+            self.worker.send(payload)
+            response = self.worker.read()
+        except WorkerCrashed:
+            LOGGER.warning("Worker crashed during completions", exc_info=True)
+            self._ensure_worker()
+            return []
+        
+        if response.get("ok"):
+            return response.get("completions", [])
+        else:
+            LOGGER.warning("Completions failed: %s", response.get("message"))
+            return []
+
+    def lookup(self, symbol: str) -> dict:
+        """Get symbol information from the worker process.
+        
+        Parameters
+        ----------
+        symbol : str
+            The symbol to look up.
+            
+        Returns
+        -------
+        dict
+            Symbol information dictionary.
+        """
+        payload = {
+            "op": "lookup",
+            "symbol": symbol,
+            "session": self.session.id,
+        }
+        
+        self._ensure_worker()
+        try:
+            self.worker.send(payload)
+            response = self.worker.read()
+        except WorkerCrashed:
+            LOGGER.warning("Worker crashed during lookup", exc_info=True)
+            self._ensure_worker()
+            return {}
+        
+        if response.get("ok"):
+            return response.get("info", {})
+        else:
+            LOGGER.warning("Lookup failed: %s", response.get("message"))
+            return {}
 
 
 __all__ = ["ProcessEvalBackend"]
