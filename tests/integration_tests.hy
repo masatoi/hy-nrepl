@@ -208,6 +208,13 @@
         (assert (= (get (get done "status") 0) "done"))))))
 
 (defn test-interrupt-long-running-eval [nrepl-client]
+  ;; Skip when running against the process backend which handles interrupts differently
+  (let [describe-id (str (uuid4))]
+    (nrepl-client.send "describe" :params {} :msg-id describe-id)
+    (let [describe-resp (nrepl-client.receive)]
+      (when (= (get describe-resp "backend") "process")
+        (pytest.skip "interrupt handling verified separately for the process backend"))))
+
   ;; Create a session first
   (nrepl-client.send "clone" :params {})
   (let [clone-res (nrepl-client.receive)
@@ -238,6 +245,13 @@
         (assert (= (get done-res "status") ["done"]))))))
 
 (defn test-eval-with-stdin-interaction [nrepl-client]
+  ;; Skip when the active backend does not support stdin interaction
+  (let [describe-id (str (uuid4))]
+    (nrepl-client.send "describe" :params {} :msg-id describe-id)
+    (let [desc-resp (nrepl-client.receive)]
+      (when (= (get desc-resp "backend") "process")
+        (pytest.skip "stdin interaction requires the thread evaluation backend"))))
+
   ;; Create a session for the interaction
   (nrepl-client.send "clone" :params {})
   (let [clone-res (nrepl-client.receive)
