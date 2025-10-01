@@ -46,11 +46,14 @@ class StreamingOut(io.TextIOBase):
     """A file-like object that streams writes to an nREPL client."""
 
     def __init__(self, writer: Callable[[Dict[str, Any]], None]) -> None:
-        self.writer = writer
+        # ``io.TextIOBase`` uses a restrictive ``__setattr__``.  Assign via the
+        # base ``object`` implementation so the attribute is always available,
+        # regardless of the Python build.
+        object.__setattr__(self, "_writer", writer)
 
     def write(self, text: str) -> int:
         if text:
-            self.writer({"out": text})
+            self._writer({"out": text})
         return len(text)
 
     def flush(self) -> None:  # pragma: no cover - nothing to flush
