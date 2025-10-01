@@ -197,12 +197,16 @@ class Worker:
                 raise SoftInterrupt()
             return tracer
 
-        old_trace = sys.gettrace()
-        old_thread_trace = threading.gettrace()
-        sys.settrace(tracer)
-        threading.settrace(tracer)
         try:
+            # Parse first, before setting trace (parsing shouldn't be interruptible)
             expr = self._tokenize(code)
+
+            # Now set trace for evaluation only
+            old_trace = sys.gettrace()
+            old_thread_trace = threading.gettrace()
+            sys.settrace(tracer)
+            threading.settrace(tracer)
+
             with contextlib.redirect_stdout(stdout_buf), contextlib.redirect_stderr(stderr_buf):
                 result = hy_eval(expr, locals=self.locals, module=self.module)
             payload: Dict[str, Any] = {
@@ -234,8 +238,13 @@ class Worker:
             payload["elapsed_ms"] = int((time.perf_counter() - start) * 1000)
             self._emit(payload)
         finally:
-            sys.settrace(old_trace)
-            threading.settrace(old_thread_trace)
+            # Restore trace functions (only if they were set)
+            try:
+                sys.settrace(old_trace)
+                threading.settrace(old_thread_trace)
+            except NameError:
+                # If parsing failed, old_trace/old_thread_trace may not be defined
+                pass
             self.eval_running.clear()
             self.cancel_event.clear()
 

@@ -66,13 +66,37 @@ def test_process_interrupt_long_loop(process_session):
     assert any(m.get("status") == ["done", "interrupted"] for m in messages)
 
 
-def test_process_matplotlib_support(process_session):
+def test_process_matplotlib_support():
+    """Test matplotlib support with process backend.
+
+    Uses a custom backend with higher memory limit since matplotlib
+    requires more memory than the default 512MB limit.
+    """
     pytest.importorskip("matplotlib")
-    transport = TransportCollector()
-    code = "(do (import matplotlib) (import matplotlib.pyplot [as plt]) (.plot plt [1 2] [3 4]) (.close plt) \"ok\")"
-    process_session.backend.eval({"id": "mpl", "code": code, "ns": "Hy"}, transport)
-    messages = transport.messages()
-    assert any(m.get("value") == '"ok"' for m in messages)
+
+    # Create backend with higher memory limit for matplotlib
+    from hy_nrepl.backend_process import ProcessEvalBackend
+    factory = make_backend_factory("process")
+    registry = SessionRegistry(factory, "process")
+    session = registry.create()
+    session.registry = registry
+
+    # Replace backend with one that has higher memory limit
+    session.backend = ProcessEvalBackend(
+        session,
+        memory_limit=1024 * 1024 * 1024,  # 1GB for matplotlib
+        cpu_limit=30
+    )
+
+    try:
+        transport = TransportCollector()
+        code = "(do (import matplotlib) (import matplotlib.pyplot :as plt) (.plot plt [1 2] [3 4]) (.close plt) \"ok\")"
+        session.backend.eval({"id": "mpl", "code": code, "ns": "Hy"}, transport)
+        messages = transport.messages()
+        assert any(m.get("value") == '"ok"' for m in messages), f"Expected '\"ok\"', got messages: {messages}"
+    finally:
+        if session.backend:
+            session.backend.close()
 
 
 def test_process_forced_kill_and_restart(process_session):
