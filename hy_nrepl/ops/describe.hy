@@ -25,6 +25,6 @@
            "ops" (dfor [k v] (.items ops) k (get v :desc))
            "backend" (if session.registry.backend-name
                           session.registry.backend-name
-                          (or session.backend-name "thread"))
+                          (or session.backend-name "process"))
            "session" (.get msg "session")}
           transport))

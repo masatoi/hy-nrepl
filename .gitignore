@@ -8,3 +8,5 @@ hy_nrepl.egg-info/
 __pycache__
 *~
 .#*
+
+.serena/

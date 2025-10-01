@@ -52,7 +52,7 @@
     ((find-op (.get msg "op")) self msg transport)))
 
 (defclass SessionRegistry []
-  (defn __init__ [self [backend-factory None] [backend-name "thread"]]
+  (defn __init__ [self [backend-factory None] [backend-name "process"]]
     (setv self._sessions {})
     (setv self._lock (Lock))
     (setv self._backend-factory backend-factory)

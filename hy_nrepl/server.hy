@@ -7,7 +7,7 @@
         hy-nrepl.session [SessionRegistry]
         hy-nrepl.bencode [decode]
         hy-nrepl.backends [make-backend-factory]
-        toolz [last])
+        toolz [first last])
 
 ;; TODO: move these includes somewhere else
 ;; (import hy-nrepl.ops [eval complete info])
@@ -29,7 +29,7 @@
 (defclass ReplServer [TCPServer ThreadingMixIn]
   (setv allow-reuse-address True)
 
-  (defn __init__ [self addr handler [backend-factory None] [backend-name "thread"]]
+  (defn __init__ [self addr handler [backend-factory None] [backend-name "process"]]
     (.__init__ (super) addr handler)
     (setv self.session_registry (SessionRegistry backend-factory backend-name))))
 
@@ -98,7 +98,7 @@
           ;; so the server will continue accepting new clients.
           (logging.info "Client gone")))))
 
-(defn start-server [[ip "127.0.0.1"] [port 7888] [backend-factory None] [backend-name "thread"]]
+(defn start-server [[ip "127.0.0.1"] [port 7888] [backend-factory None] [backend-name "process"]]
   (let [s (ReplServer #(ip port) ReplRequestHandler backend-factory backend-name)
         t (threading.Thread
             :target (fn []
