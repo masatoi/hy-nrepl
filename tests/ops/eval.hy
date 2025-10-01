@@ -12,7 +12,7 @@
   (setv writer (fn [x]
                  (nonlocal result)
                  (.append result x))) ; mock writer
-  (setv eval-instance  (InterruptibleEval msg session writer))
+  (setv eval-instance  (InterruptibleEval session msg writer))
   (eval-instance.run)
   (print (.format "result: {}" result))
   (assert (= result expected-result)))
@@ -71,7 +71,7 @@ arr"
   (setv writer (fn [x]
                  (nonlocal result)
                  (.append result x))) ; mock writer
-  (setv eval-instance  (InterruptibleEval msg session writer))
+  (setv eval-instance  (InterruptibleEval session msg writer))
   (eval-instance.run)
   (print (.format "result: {}" result))
   (setv eval-error (first (filter (fn [dict] (= (.get dict "status" None) ["eval-error"])) result)))
@@ -87,7 +87,7 @@ arr"
   (setv writer (fn [x]
                  (nonlocal result)
                  (.append result x)))
-  (setv eval-instance (InterruptibleEval msg session writer))
+  (setv eval-instance (InterruptibleEval session msg writer))
   (eval-instance.run)
   (setv eval-error (first (filter (fn [d] (= (.get d "status") ["eval-error"])) result)))
   (assert eval-error)
@@ -103,7 +103,7 @@ arr"
   (setv writer (fn [x]
                  (nonlocal result)
                  (.append result x)))
-  (setv eval-instance (InterruptibleEval msg session writer))
+  (setv eval-instance (InterruptibleEval session msg writer))
   (eval-instance.run)
   (setv eval-error (first (filter (fn [d] (= (.get d "status") ["eval-error"])) result)))
   (assert eval-error)
